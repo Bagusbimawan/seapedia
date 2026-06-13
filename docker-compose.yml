@@ -1,0 +1,39 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: seapedia
+      POSTGRES_PASSWORD: seapedia123
+      POSTGRES_DB: seapedia_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seapedia -d seapedia_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    env_file: ./backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    env_file: ./frontend/.env.local
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
