@@ -29,6 +29,8 @@ tidy:
 swag:
 	swag init -g $(MAIN)/main.go -o ./docs
 
+swagger: swag
+
 migrate-up:
 	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/001_initial.up.sql
 

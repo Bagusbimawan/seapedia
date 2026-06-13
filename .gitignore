@@ -75,6 +75,7 @@ Thumbs.db
 # ===========================
 # IDE / Editor
 # ===========================
+.cursor/
 .idea/
 .vscode/
 *.swp
