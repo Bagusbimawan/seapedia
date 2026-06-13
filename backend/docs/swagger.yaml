@@ -1,0 +1,1497 @@
+basePath: /api/v1
+definitions:
+  dto.AddCartItemReq:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  dto.AddressResponse:
+    properties:
+      city:
+        type: string
+      id:
+        type: string
+      is_default:
+        type: boolean
+      label:
+        type: string
+      street:
+        type: string
+      zip_code:
+        type: string
+    type: object
+  dto.AdvanceDayResponse:
+    properties:
+      offset_hours:
+        type: integer
+    type: object
+  dto.CartItemResponse:
+    properties:
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  dto.CartResponse:
+    properties:
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.CartItemResponse'
+        type: array
+      store_id:
+        type: string
+    type: object
+  dto.CheckoutReq:
+    properties:
+      address_id:
+        type: string
+      delivery_method:
+        enum:
+        - INSTANT
+        - NEXT_DAY
+        - REGULAR
+        type: string
+      discount_code:
+        type: string
+    required:
+    - address_id
+    - delivery_method
+    type: object
+  dto.CreateAddressReq:
+    properties:
+      city:
+        maxLength: 100
+        minLength: 1
+        type: string
+      is_default:
+        type: boolean
+      label:
+        maxLength: 100
+        minLength: 1
+        type: string
+      street:
+        minLength: 1
+        type: string
+      zip_code:
+        maxLength: 10
+        minLength: 1
+        type: string
+    required:
+    - city
+    - label
+    - street
+    - zip_code
+    type: object
+  dto.CreateProductReq:
+    properties:
+      description:
+        maxLength: 2000
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      price:
+        minimum: 1
+        type: integer
+      stock:
+        minimum: 0
+        type: integer
+    required:
+    - name
+    - price
+    - stock
+    type: object
+  dto.CreatePromoReq:
+    properties:
+      code:
+        maxLength: 50
+        minLength: 2
+        type: string
+      discount_type:
+        enum:
+        - PERCENT
+        - FIXED
+        type: string
+      discount_value:
+        minimum: 1
+        type: integer
+      expiry_date:
+        type: string
+    required:
+    - code
+    - discount_type
+    - discount_value
+    - expiry_date
+    type: object
+  dto.CreateReviewReq:
+    properties:
+      comment:
+        maxLength: 2000
+        minLength: 1
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      reviewer_name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - comment
+    - rating
+    - reviewer_name
+    type: object
+  dto.CreateStoreReq:
+    properties:
+      description:
+        maxLength: 2000
+        type: string
+      name:
+        maxLength: 200
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  dto.CreateVoucherReq:
+    properties:
+      code:
+        maxLength: 50
+        minLength: 2
+        type: string
+      discount_type:
+        enum:
+        - PERCENT
+        - FIXED
+        type: string
+      discount_value:
+        minimum: 1
+        type: integer
+      expiry_date:
+        type: string
+      remaining_usage:
+        minimum: 1
+        type: integer
+    required:
+    - code
+    - discount_type
+    - discount_value
+    - expiry_date
+    - remaining_usage
+    type: object
+  dto.DeliveryJobResponse:
+    properties:
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      driver_user_id:
+        type: string
+      earning_amount:
+        type: integer
+      id:
+        type: string
+      order_id:
+        type: string
+      taken_at:
+        type: string
+    type: object
+  dto.DiscountResponse:
+    properties:
+      code:
+        type: string
+      discount_type:
+        type: string
+      discount_value:
+        type: integer
+      expiry_date:
+        type: string
+      id:
+        type: string
+      kind:
+        type: string
+      remaining_usage:
+        type: integer
+    type: object
+  dto.LoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.LoginResponse:
+    properties:
+      active_role:
+        type: string
+      needs_role_select:
+        type: boolean
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.OrderItemResponse:
+    properties:
+      name_snapshot:
+        type: string
+      price_snapshot:
+        type: integer
+      product_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  dto.OrderResponse:
+    properties:
+      address_snapshot:
+        $ref: '#/definitions/order.AddressSnapshot'
+      buyer_user_id:
+        type: string
+      created_at:
+        type: string
+      deadline_at:
+        type: string
+      delivery_fee:
+        type: integer
+      delivery_method:
+        type: string
+      discount_amount:
+        type: integer
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.OrderItemResponse'
+        type: array
+      status:
+        type: string
+      store_id:
+        type: string
+      subtotal:
+        type: integer
+      tax_amount:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ProductResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      stock:
+        type: integer
+      store_id:
+        type: string
+    type: object
+  dto.RegisterReq:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+      roles:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      username:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - roles
+    - username
+    type: object
+  dto.ReviewResponse:
+    properties:
+      comment:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      rating:
+        type: integer
+      reviewer_name:
+        type: string
+    type: object
+  dto.StoreResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      seller_user_id:
+        type: string
+    type: object
+  dto.SwitchRoleReq:
+    properties:
+      role:
+        enum:
+        - SELLER
+        - BUYER
+        - DRIVER
+        type: string
+    required:
+    - role
+    type: object
+  dto.TopupReq:
+    properties:
+      amount:
+        minimum: 1
+        type: integer
+    required:
+    - amount
+    type: object
+  dto.UpdateCartItemReq:
+    properties:
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - quantity
+    type: object
+  dto.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      phone:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      username:
+        type: string
+    type: object
+  dto.ValidateDiscountReq:
+    properties:
+      code:
+        type: string
+      subtotal:
+        minimum: 1
+        type: integer
+    required:
+    - code
+    - subtotal
+    type: object
+  dto.WalletResponse:
+    properties:
+      balance:
+        type: integer
+      id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  order.AddressSnapshot:
+    properties:
+      city:
+        type: string
+      label:
+        type: string
+      street:
+        type: string
+      zip_code:
+        type: string
+    type: object
+  response.R:
+    properties:
+      data: {}
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Multi-Role Marketplace API for COMPFEST 18
+  title: SEAPEDIA API
+  version: "1.0"
+paths:
+  /admin/advance-day:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AdvanceDayResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Advance virtual clock by one day
+      tags:
+      - admin
+  /admin/orders:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List all orders
+      tags:
+      - admin
+  /admin/promos:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Promo data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePromoReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DiscountResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create promo
+      tags:
+      - admin
+      - discounts
+  /admin/stores:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List all stores
+      tags:
+      - admin
+  /admin/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - admin
+  /admin/vouchers:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Voucher data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateVoucherReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DiscountResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create voucher
+      tags:
+      - admin
+      - discounts
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.LoginResponse'
+              type: object
+      summary: Login
+      tags:
+      - auth
+  /auth/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+      summary: Register a new user
+      tags:
+      - auth
+  /auth/switch-role:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role to switch to
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SwitchRoleReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: Switch active role
+      tags:
+      - auth
+  /buyer/addresses:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List buyer addresses
+      tags:
+      - buyer
+      - addresses
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Address data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAddressReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AddressResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create address
+      tags:
+      - buyer
+      - addresses
+  /buyer/addresses/{id}:
+    delete:
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete address
+      tags:
+      - buyer
+      - addresses
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AddressResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update address
+      tags:
+      - buyer
+      - addresses
+  /buyer/addresses/{id}/set-default:
+    post:
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: Set default address
+      tags:
+      - buyer
+      - addresses
+  /buyer/cart:
+    delete:
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Clear cart
+      tags:
+      - buyer
+      - cart
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CartResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get buyer cart
+      tags:
+      - buyer
+      - cart
+  /buyer/cart/items:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Cart item
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddCartItemReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CartResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Add item to cart
+      tags:
+      - buyer
+      - cart
+  /buyer/cart/items/{productId}:
+    delete:
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CartResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Remove item from cart
+      tags:
+      - buyer
+      - cart
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      - description: Quantity
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCartItemReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CartResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update cart item quantity
+      tags:
+      - buyer
+      - cart
+  /buyer/checkout:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Checkout data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CheckoutReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Checkout cart
+      tags:
+      - buyer
+      - checkout
+  /buyer/discount/validate:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Discount code
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ValidateDiscountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: Validate discount code
+      tags:
+      - buyer
+      - discounts
+  /buyer/orders:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List buyer orders
+      tags:
+      - buyer
+      - orders
+  /buyer/orders/{id}:
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get buyer order detail
+      tags:
+      - buyer
+      - orders
+  /buyer/wallet:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WalletResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get buyer wallet
+      tags:
+      - buyer
+      - wallet
+  /buyer/wallet/topup:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Topup amount
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TopupReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WalletResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Top up wallet
+      tags:
+      - buyer
+      - wallet
+  /buyer/wallet/transactions:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List wallet transactions
+      tags:
+      - buyer
+      - wallet
+  /driver/jobs:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List available delivery jobs
+      tags:
+      - driver
+  /driver/jobs/{id}/complete:
+    post:
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DeliveryJobResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Complete a delivery job
+      tags:
+      - driver
+  /driver/jobs/{id}/take:
+    post:
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DeliveryJobResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Take a delivery job
+      tags:
+      - driver
+  /driver/jobs/history:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List driver job history
+      tags:
+      - driver
+  /products:
+    get:
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      summary: List products
+      tags:
+      - products
+  /products/{id}:
+    get:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+      summary: Get product by ID
+      tags:
+      - products
+  /promos:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      summary: List promos
+      tags:
+      - discounts
+  /reviews:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      summary: List reviews
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Review data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateReviewReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ReviewResponse'
+              type: object
+      summary: Create review
+      tags:
+      - reviews
+  /seller/income:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List seller income
+      tags:
+      - seller
+      - income
+  /seller/orders:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List seller orders
+      tags:
+      - seller
+      - orders
+  /seller/orders/{id}:
+    get:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get seller order detail
+      tags:
+      - seller
+      - orders
+  /seller/orders/{id}/ready:
+    post:
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Mark order ready for delivery
+      tags:
+      - seller
+      - orders
+  /seller/products:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      security:
+      - BearerAuth: []
+      summary: List seller products
+      tags:
+      - seller
+      - products
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProductReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create product
+      tags:
+      - seller
+      - products
+  /seller/products/{id}:
+    delete:
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Delete product
+      tags:
+      - seller
+      - products
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProductReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update product
+      tags:
+      - seller
+      - products
+  /seller/store:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StoreResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get seller's store
+      tags:
+      - seller
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Store data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateStoreReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StoreResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create seller store
+      tags:
+      - seller
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Store data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateStoreReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StoreResponse'
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update seller store
+      tags:
+      - seller
+  /stores/{id}:
+    get:
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.R'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.StoreResponse'
+              type: object
+      summary: Get store by ID
+      tags:
+      - stores
+  /vouchers:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.R'
+      summary: List vouchers
+      tags:
+      - discounts
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
