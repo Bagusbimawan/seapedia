@@ -1,0 +1,44 @@
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import DashboardLayout from '@/components/layout/DashboardLayout'
+import Card from '@/components/ui/Card'
+import { OrderStatusBadge } from '@/components/ui/Badge'
+import { listOrders } from '@/lib/api/admin'
+import { formatRupiah, formatDate } from '@/lib/format'
+import { useScopedQueryKey } from '@/lib/queryKeys'
+import { ADMIN_NAV } from '@/lib/nav'
+import type { OrderStatus } from '@/types'
+
+export default function AdminOrdersPage() {
+  const ordersKey = useScopedQueryKey('admin-orders-list')
+
+  const { data, isLoading } = useQuery({
+    queryKey: ordersKey,
+    queryFn: async () => (await listOrders({ limit: 50 })).data.data,
+  })
+
+  return (
+    <DashboardLayout title="Pesanan" navItems={ADMIN_NAV} role="ADMIN">
+      {isLoading ? (
+        <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
+      ) : !data?.items?.length ? (
+        <Card><p className="text-sm text-slate-500">Belum ada pesanan.</p></Card>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {data.items.map((order) => (
+            <Card key={order.id}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">{formatRupiah(order.total)}</p>
+                  <p className="text-xs text-slate-400">{formatDate(order.created_at)}</p>
+                </div>
+                <OrderStatusBadge status={order.status as OrderStatus} />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </DashboardLayout>
+  )
+}
