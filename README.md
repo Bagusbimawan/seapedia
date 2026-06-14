@@ -35,7 +35,7 @@ docker compose up -d postgres
 ```bash
 cd backend
 make migrate-up    # atau: psql $DATABASE_URL -f migrations/001_initial.up.sql
-make seed          # 5 akun demo + toko + produk + voucher DISC20
+make seed          # 4 akun demo + toko + produk + voucher DISC20
 ```
 
 ### 4. Backend API
@@ -72,9 +72,10 @@ docker compose up --build
 | `seller@seapedia.com` | `seller123` | SELLER | Toko Contoh + 3 produk |
 | `buyer@seapedia.com` | `buyer123` | BUYER | Saldo Rp 500.000 |
 | `driver@seapedia.com` | `driver123` | DRIVER | — |
-| `multi@seapedia.com` | `multi123` | SELLER+BUYER+DRIVER | Pilih peran setelah login |
 
 **Voucher demo:** `DISC20` (diskon 20%)
+
+Setiap peran punya akun terpisah (Admin, Seller, Buyer, Driver). Register multi-role masih didukung lewat `/register`, tapi demo memakai akun single-role.
 
 ### Cara membuat Admin
 
@@ -171,11 +172,11 @@ Lihat **[SECURITY.md](./SECURITY.md)** untuk penjelasan lengkap: SQL injection, 
 ## Testing
 
 ```bash
-# Backend API smoke test (butuh server + seed)
-./scripts/test-api.sh
-
 # Frontend build
 cd frontend && bun run build
+
+# Backend tests
+cd backend && make test
 ```
 
 ---
@@ -187,7 +188,6 @@ seapedia/
 ├── backend/          # Go Fiber API (clean architecture)
 ├── frontend/         # Next.js 15 App Router
 ├── docs/postman/     # Postman collection
-├── scripts/          # Test scripts
 ├── docker-compose.yml
 ├── README.md
 ├── SECURITY.md
@@ -206,17 +206,7 @@ seapedia/
 | API | https://seapedia.be.bagusbimawan.com/api/v1 |
 | Swagger | https://seapedia.be.bagusbimawan.com/swagger/index.html |
 
-Deploy ke Amazon Linux EC2 (native, tanpa Docker):
-
-```bash
-cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env
-# Lengkapi DB_HOST, DB_PASSWORD, JWT_SECRET di deploy.env
-
-sudo bash scripts/deploy/deploy.sh --setup
-sudo bash scripts/deploy/deploy.sh --migrate
-sudo bash scripts/deploy/deploy.sh
-sudo bash scripts/deploy/deploy.sh --ssl   # setelah DNS A-record aktif
-```
+Deploy sudah dikonfigurasi di server production. Setelah `git pull`, jalankan ulang deploy dari server (script deploy ada di server, tidak di repo).
 
 **DNS A-record** (arahkan ke IP EC2):
 
