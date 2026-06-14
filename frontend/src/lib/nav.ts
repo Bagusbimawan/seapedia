@@ -27,7 +27,7 @@ export const BUYER_NAV: NavItem[] = [
   { href: '/buyer/wallet', label: 'Dompet', icon: Wallet },
   { href: '/buyer/addresses', label: 'Alamat', icon: MapPin },
   { href: '/buyer/cart', label: 'Keranjang', icon: ShoppingCart },
-  { href: '/buyer/orders', label: 'Pesanan', icon: Package },
+  { href: '/buyer/orders', label: 'Riwayat Pembelian', icon: Package },
 ]
 
 export const SELLER_NAV: NavItem[] = [

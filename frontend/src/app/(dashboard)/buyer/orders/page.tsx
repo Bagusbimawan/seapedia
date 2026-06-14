@@ -25,7 +25,7 @@ export default function BuyerOrdersPage() {
   })
 
   return (
-    <DashboardLayout title="Pesanan Saya" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">
+    <DashboardLayout title="Riwayat Pembelian" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">
       {isLoading ? (
         <LoadingSkeleton rows={4} />
       ) : !data?.items?.length ? (
