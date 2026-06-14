@@ -28,11 +28,27 @@ log()  { echo "==> $*"; }
 ok()   { echo "✓ $*"; }
 die()  { echo "ERROR: $*" >&2; exit 1; }
 
-# --- Load config ---
+# --- Load config (parse KEY=VALUE; jangan source — aman untuk ) $ ! di password) ---
 load_env() {
   [[ -f "$ENV_FILE" ]] || die "deploy.env tidak ada. Copy dari deploy.env.example"
-  # shellcheck disable=SC1090
-  source "$ENV_FILE"
+  local line key value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" == *"="* ]] || continue
+    key="${line%%=*}"
+    value="${line#*=}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    if [[ "$value" =~ ^\'(.*)\'$ ]]; then
+      value="${BASH_REMATCH[1]}"
+    elif [[ "$value" =~ ^\"(.*)\"$ ]]; then
+      value="${BASH_REMATCH[1]}"
+    fi
+    export "$key"="$value"
+  done < "$ENV_FILE"
   APP_DIR="${APP_DIR:-$ROOT_DIR}"
 }
 
