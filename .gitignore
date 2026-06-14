@@ -41,8 +41,9 @@ frontend/.turbo/
 .vercel
 
 # ===========================
-# Environment files
+# Deploy secrets (production)
 # ===========================
+scripts/deploy/deploy.env
 .env
 .env.local
 .env.development.local

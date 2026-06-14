@@ -198,14 +198,32 @@ seapedia/
 
 ## Deployment (Optional +15 pts)
 
-Tambahkan URL live di bagian ini setelah deploy:
+**Production URLs:**
 
-```
-Frontend: (belum deploy)
-Backend:  (belum deploy)
+| Service | URL |
+|---------|-----|
+| Frontend | https://seapedia.fe.bagusbimawan.com |
+| API | https://seapedia.be.bagusbimawan.com/api/v1 |
+| Swagger | https://seapedia.be.bagusbimawan.com/swagger/index.html |
+
+Deploy ke Amazon Linux EC2 (native, tanpa Docker):
+
+```bash
+cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env
+# Lengkapi DB_HOST, DB_PASSWORD, JWT_SECRET di deploy.env
+
+sudo bash scripts/deploy/deploy.sh --setup
+sudo bash scripts/deploy/deploy.sh --migrate
+sudo bash scripts/deploy/deploy.sh
+sudo bash scripts/deploy/deploy.sh --ssl   # setelah DNS A-record aktif
 ```
 
-Rekomendasi: Railway / Render (backend + Postgres) + Vercel (frontend).
+**DNS A-record** (arahkan ke IP EC2):
+
+| Host | Value |
+|------|-------|
+| `seapedia.fe.bagusbimawan.com` | `<IP-EC2>` |
+| `seapedia.be.bagusbimawan.com` | `<IP-EC2>` |
 
 ---
 
