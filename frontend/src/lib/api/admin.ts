@@ -21,3 +21,12 @@ export const listOrders = (params?: AdminOrderListParams) =>
 
 export const advanceDay = () =>
   client.post<ApiResponse<{ offset_hours: number }>>('/admin/advance-day', {})
+
+export interface AdminCreateStoreRequest {
+  seller_user_id: string
+  name: string
+  description?: string
+}
+
+export const adminCreateStore = (data: AdminCreateStoreRequest) =>
+  client.post<ApiResponse<Store>>('/admin/stores', data)

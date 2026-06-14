@@ -6,8 +6,10 @@ import (
 	"github.com/bagus/seapedia/internal/domain/order"
 	"github.com/bagus/seapedia/internal/domain/store"
 	"github.com/bagus/seapedia/internal/domain/user"
+	"github.com/bagus/seapedia/internal/pkg/apperror"
 	"github.com/bagus/seapedia/internal/pkg/clock"
 	"github.com/bagus/seapedia/internal/repository/postgres"
+	"github.com/google/uuid"
 )
 
 // Usecase handles admin business logic.
@@ -49,6 +51,49 @@ func (u *Usecase) ListUsers(ctx context.Context, page, limit int) ([]*user.User,
 // ListStores returns all stores.
 func (u *Usecase) ListStores(ctx context.Context, page, limit int) ([]*store.Store, int64, error) {
 	return u.storeRepo.ListAll(ctx, page, limit)
+}
+
+// CreateStore creates a store for a seller user (admin action).
+func (u *Usecase) CreateStore(ctx context.Context, sellerUserID, name, description string) (*store.Store, error) {
+	seller, err := u.userRepo.FindByID(ctx, sellerUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	hasSellerRole := false
+	for _, r := range seller.Roles {
+		if r == user.RoleSeller {
+			hasSellerRole = true
+			break
+		}
+	}
+	if !hasSellerRole {
+		return nil, apperror.BadRequest("user does not have SELLER role")
+	}
+
+	if _, err := u.storeRepo.FindBySellerID(ctx, sellerUserID); err == nil {
+		return nil, apperror.Conflict("seller already has a store")
+	} else if !isNotFound(err) {
+		return nil, err
+	}
+
+	s := &store.Store{
+		ID:           uuid.New().String(),
+		SellerUserID: sellerUserID,
+		Name:         name,
+		Description:  description,
+	}
+	if err := u.storeRepo.Create(ctx, s); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func isNotFound(err error) bool {
+	if e, ok := err.(*apperror.AppError); ok {
+		return e.Code == 404
+	}
+	return false
 }
 
 // ListOrders returns all orders.

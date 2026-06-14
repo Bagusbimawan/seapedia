@@ -121,20 +121,6 @@ func main() {
 				}
 			},
 		},
-		{
-			email: "multi@seapedia.com", password: "multi123", username: "multi",
-			roles: []user.Role{user.RoleSeller, user.RoleBuyer, user.RoleDriver},
-			extra: func(userID string) {
-				w := &wallet.Wallet{
-					ID:      uuid.New().String(),
-					UserID:  userID,
-					Balance: 500000,
-				}
-				_ = walletRepo.CreateWallet(ctx, w)
-				c := &cart.Cart{ID: uuid.New().String(), UserID: userID}
-				_ = cartRepo.CreateCart(ctx, c)
-			},
-		},
 	}
 
 	for _, acc := range accounts {
@@ -163,44 +149,6 @@ func main() {
 			acc.extra(u.ID)
 		}
 		log.Printf("seeded user: %s", acc.email)
-	}
-
-	// Ensure multi-role account has seller store (sync with seller@ demo)
-	if multiUser, err := userRepo.FindByEmail(ctx, "multi@seapedia.com"); err == nil {
-		if _, err := storeRepo.FindBySellerID(ctx, multiUser.ID); err != nil {
-			s := &store.Store{
-				ID:           uuid.New().String(),
-				SellerUserID: multiUser.ID,
-				Name:         "Toko Multi",
-				Description:  "Toko demo akun multi-role",
-			}
-			if err := storeRepo.Create(ctx, s); err != nil {
-				log.Printf("multi store seed: %v", err)
-			} else {
-				products := []struct {
-					name  string
-					price int64
-					stock int
-				}{
-					{"Ikan Segar Multi", 45000, 80},
-					{"Udang Beku Multi", 85000, 40},
-				}
-				for _, p := range products {
-					prod := &product.Product{
-						ID:          uuid.New().String(),
-						StoreID:     s.ID,
-						Name:        p.name,
-						Description: fmt.Sprintf("Deskripsi %s", p.name),
-						Price:       p.price,
-						Stock:       p.stock,
-					}
-					if err := productRepo.Create(ctx, prod); err != nil {
-						log.Printf("multi product seed: %v", err)
-					}
-				}
-				log.Println("seeded multi-role seller store")
-			}
-		}
 	}
 
 	// Seed sample voucher

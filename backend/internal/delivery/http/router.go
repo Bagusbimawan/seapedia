@@ -102,6 +102,7 @@ func NewRouter(app *fiber.App, cfg *config.Config, h *Handlers) {
 	admin := api.Group("/admin", authMW, middleware.RequireRole(user.RoleAdmin))
 	admin.Get("/users", h.Admin.ListUsers)
 	admin.Get("/stores", h.Admin.ListStores)
+	admin.Post("/stores", h.Admin.CreateStore)
 	admin.Get("/orders", h.Admin.ListOrders)
 	admin.Post("/vouchers", h.Discount.CreateVoucher)
 	admin.Post("/promos", h.Discount.CreatePromo)

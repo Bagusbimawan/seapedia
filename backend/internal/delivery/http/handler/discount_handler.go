@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -77,9 +78,9 @@ func (h *DiscountHandler) CreateVoucher(c *fiber.Ctx) error {
 	if err := ParseBody(c, &req); err != nil {
 		return err
 	}
-	expiry, err := time.Parse(time.RFC3339, req.ExpiryDate)
+	expiry, err := parseExpiryDate(req.ExpiryDate)
 	if err != nil {
-		return response.BadRequest(c, "invalid expiry_date format, use RFC3339")
+		return response.BadRequest(c, "invalid expiry_date format, use YYYY-MM-DD or RFC3339")
 	}
 	d, err := h.uc.CreateVoucher(c.Context(), req.Code, discount.DiscountType(req.DiscountType), req.DiscountValue, expiry, req.RemainingUsage)
 	if err != nil {
@@ -102,9 +103,9 @@ func (h *DiscountHandler) CreatePromo(c *fiber.Ctx) error {
 	if err := ParseBody(c, &req); err != nil {
 		return err
 	}
-	expiry, err := time.Parse(time.RFC3339, req.ExpiryDate)
+	expiry, err := parseExpiryDate(req.ExpiryDate)
 	if err != nil {
-		return response.BadRequest(c, "invalid expiry_date format, use RFC3339")
+		return response.BadRequest(c, "invalid expiry_date format, use YYYY-MM-DD or RFC3339")
 	}
 	d, err := h.uc.CreatePromo(c.Context(), req.Code, discount.DiscountType(req.DiscountType), req.DiscountValue, expiry)
 	if err != nil {
@@ -317,6 +318,27 @@ func (h *AdminHandler) ListStores(c *fiber.Ctx) error {
 	return response.OK(c, response.Paginated{Items: items, Total: total, Page: page, Limit: limit})
 }
 
+// CreateStore godoc
+// @Summary Create store for seller (admin)
+// @Tags admin
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body dto.AdminCreateStoreReq true "Store data"
+// @Success 201 {object} response.R{data=dto.StoreResponse}
+// @Router /admin/stores [post]
+func (h *AdminHandler) CreateStore(c *fiber.Ctx) error {
+	var req dto.AdminCreateStoreReq
+	if err := ParseBody(c, &req); err != nil {
+		return err
+	}
+	s, err := h.uc.CreateStore(c.Context(), req.SellerUserID, req.Name, req.Description)
+	if err != nil {
+		return HandleErr(c, err)
+	}
+	return response.Created(c, dto.ToStoreResponse(s))
+}
+
 // ListOrders godoc
 // @Summary List all orders
 // @Tags admin
@@ -355,4 +377,14 @@ func (h *AdminHandler) AdvanceDay(c *fiber.Ctx) error {
 		return HandleErr(c, err)
 	}
 	return response.OK(c, dto.AdvanceDayResponse{OffsetHours: offset})
+}
+
+func parseExpiryDate(raw string) (time.Time, error) {
+	if t, err := time.Parse(time.RFC3339, raw); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse("2006-01-02", raw); err == nil {
+		return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.UTC), nil
+	}
+	return time.Time{}, fmt.Errorf("invalid date format")
 }

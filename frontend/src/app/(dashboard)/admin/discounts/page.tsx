@@ -14,13 +14,17 @@ import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { ADMIN_NAV } from '@/lib/nav'
 import type { DiscountType } from '@/types'
 
+function toExpiryISO(date: string): string {
+  return date
+}
+
 export default function AdminDiscountsPage() {
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'voucher' | 'promo'>('voucher')
   const [code, setCode] = useState('')
   const [discountType, setDiscountType] = useState<DiscountType>('PERCENT')
   const [value, setValue] = useState(20)
-  const [expiry, setExpiry] = useState('2026-12-31T23:59:59Z')
+  const [expiryDate, setExpiryDate] = useState('2026-12-31')
   const [usage, setUsage] = useState(100)
   const [loading, setLoading] = useState(false)
   const [clockLoading, setClockLoading] = useState(false)
@@ -36,6 +40,7 @@ export default function AdminDiscountsPage() {
     setLoading(true)
     setError(null)
     try {
+      const expiry = toExpiryISO(expiryDate)
       if (tab === 'voucher') {
         await adminCreateVoucher({ code, discount_type: discountType, discount_value: value, expiry_date: expiry, remaining_usage: usage })
         await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('vouchers') })
@@ -76,8 +81,8 @@ export default function AdminDiscountsPage() {
               <Button size="sm" variant={discountType === 'FIXED' ? 'primary' : 'secondary'} onClick={() => setDiscountType('FIXED')}>Fixed</Button>
             </div>
             <Input label="Nilai" type="number" value={value} onChange={(e) => setValue(Number(e.target.value))} />
-            <Input label="Expiry (RFC3339)" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
-            {tab === 'voucher' && <Input label="Remaining Usage" type="number" value={usage} onChange={(e) => setUsage(Number(e.target.value))} />}
+            <Input label="Tanggal Kedaluwarsa" type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
+            {tab === 'voucher' && <Input label="Sisa Penggunaan" type="number" value={usage} onChange={(e) => setUsage(Number(e.target.value))} />}
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button onClick={handleCreate} isLoading={loading}>Buat {tab === 'voucher' ? 'Voucher' : 'Promo'}</Button>
           </div>
