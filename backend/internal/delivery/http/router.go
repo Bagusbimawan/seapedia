@@ -46,6 +46,7 @@ func NewRouter(app *fiber.App, cfg *config.Config, h *Handlers) {
 	api.Get("/products", h.Product.ListPublic)
 	api.Get("/products/:id", h.Product.GetByID)
 	api.Get("/stores/:id", h.Store.GetPublic)
+	api.Get("/demo/sellers", h.Store.ListDemoSellers)
 	api.Get("/vouchers", h.Discount.ListVouchers)
 	api.Get("/promos", h.Discount.ListPromos)
 	api.Get("/reviews", h.Review.List)

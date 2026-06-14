@@ -33,6 +33,24 @@ func (h *StoreHandler) GetPublic(c *fiber.Ctx) error {
 	return response.OK(c, dto.ToStoreResponse(s))
 }
 
+// ListDemoSellers godoc
+// @Summary List sellers with stores for demo login panel
+// @Tags demo
+// @Produce json
+// @Success 200 {object} response.R
+// @Router /demo/sellers [get]
+func (h *StoreHandler) ListDemoSellers(c *fiber.Ctx) error {
+	sellers, err := h.uc.ListDemoSellers(c.Context())
+	if err != nil {
+		return HandleErr(c, err)
+	}
+	items := make([]dto.DemoSellerResponse, 0, len(sellers))
+	for _, s := range sellers {
+		items = append(items, dto.ToDemoSellerResponse(s.Email, s.Username, s.StoreName))
+	}
+	return response.OK(c, items)
+}
+
 // GetSellerStore godoc
 // @Summary Get seller's store
 // @Tags seller

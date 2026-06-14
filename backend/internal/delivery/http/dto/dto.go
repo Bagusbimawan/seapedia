@@ -94,6 +94,20 @@ func ToStoreResponse(s *store.Store) StoreResponse {
 	}
 }
 
+type DemoSellerResponse struct {
+	Email     string `json:"email"`
+	Username  string `json:"username"`
+	StoreName string `json:"store_name"`
+}
+
+func ToDemoSellerResponse(email, username, storeName string) DemoSellerResponse {
+	return DemoSellerResponse{
+		Email:     email,
+		Username:  username,
+		StoreName: storeName,
+	}
+}
+
 // ── Product ───────────────────────────────────────────────────────────────────
 
 type CreateProductReq struct {

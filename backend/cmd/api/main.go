@@ -77,7 +77,7 @@ func main() {
 
 	// Usecases
 	authUC := authuc.New(cfg, userRepo, walletRepo, cartRepo)
-	storeUC := storeuc.New(storeRepo)
+	storeUC := storeuc.New(storeRepo, userRepo)
 	productUC := productuc.New(productRepo, storeRepo)
 	walletUC := walletuc.New(walletRepo)
 	addressUC := addruc.New(addressRepo)

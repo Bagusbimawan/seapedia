@@ -4,18 +4,27 @@ import (
 	"context"
 
 	"github.com/bagus/seapedia/internal/domain/store"
+	"github.com/bagus/seapedia/internal/domain/user"
 	"github.com/bagus/seapedia/internal/pkg/apperror"
 	"github.com/google/uuid"
 )
 
+// DemoSeller is public seller info for the login demo panel.
+type DemoSeller struct {
+	Email     string
+	Username  string
+	StoreName string
+}
+
 // Usecase handles store business logic.
 type Usecase struct {
 	storeRepo store.Repository
+	userRepo  user.Repository
 }
 
 // New creates a new store Usecase.
-func New(storeRepo store.Repository) *Usecase {
-	return &Usecase{storeRepo: storeRepo}
+func New(storeRepo store.Repository, userRepo user.Repository) *Usecase {
+	return &Usecase{storeRepo: storeRepo, userRepo: userRepo}
 }
 
 // CreateStore creates a store for the seller (1 store per seller).
@@ -65,6 +74,28 @@ func (u *Usecase) GetPublicStore(ctx context.Context, id string) (*store.Store, 
 // ListAll returns all stores (admin).
 func (u *Usecase) ListAll(ctx context.Context, page, limit int) ([]*store.Store, int64, error) {
 	return u.storeRepo.ListAll(ctx, page, limit)
+}
+
+// ListDemoSellers returns sellers with stores for the public demo panel.
+func (u *Usecase) ListDemoSellers(ctx context.Context) ([]DemoSeller, error) {
+	stores, _, err := u.storeRepo.ListAll(ctx, 1, 100)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]DemoSeller, 0, len(stores))
+	for _, s := range stores {
+		seller, err := u.userRepo.FindByID(ctx, s.SellerUserID)
+		if err != nil {
+			continue
+		}
+		items = append(items, DemoSeller{
+			Email:     seller.Email,
+			Username:  seller.Username,
+			StoreName: s.Name,
+		})
+	}
+	return items, nil
 }
 
 func isNotFound(err error) bool {
