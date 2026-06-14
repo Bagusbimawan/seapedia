@@ -6,6 +6,7 @@ export function useAuth() {
 
   return {
     ...store,
+    isReady: store.hasHydrated && !!store.token,
     isRole: (r: Role) => store.activeRole === r,
   }
 }

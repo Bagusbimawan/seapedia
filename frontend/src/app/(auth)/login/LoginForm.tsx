@@ -6,8 +6,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import Cookies from 'js-cookie'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { establishSession } from '@/lib/authSession'
 import { login as loginApi } from '@/lib/api/auth'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -28,7 +27,6 @@ function getRoleRedirect(role: Role): string {
 export default function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { setAuth } = useAuthStore()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -52,14 +50,10 @@ export default function LoginForm() {
       }
 
       if (data.needs_role_select) {
-        setAuth(data.token, data.user, 'PENDING')
-        Cookies.set('seapedia-token', data.token, { expires: 7, sameSite: 'lax' })
-        Cookies.set('seapedia-role', 'PENDING', { expires: 7, sameSite: 'lax' })
+        establishSession(data.token, data.user, 'PENDING', { forceClear: true })
         router.push('/role-select')
       } else {
-        setAuth(data.token, data.user, data.active_role)
-        Cookies.set('seapedia-token', data.token, { expires: 7, sameSite: 'lax' })
-        Cookies.set('seapedia-role', data.active_role, { expires: 7, sameSite: 'lax' })
+        establishSession(data.token, data.user, data.active_role, { forceClear: true })
 
         const redirect = searchParams.get('redirect') ?? getRoleRedirect(data.active_role)
         router.push(redirect)

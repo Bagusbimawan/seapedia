@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCart } from '@/lib/api/cart'
 import { getProductById } from '@/lib/api/products'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { useAuthStore } from '@/stores/useAuthStore'
 import type { Cart, Product } from '@/types'
 
 export interface CartLineItem {
@@ -16,11 +17,13 @@ export interface CartLineItem {
 
 export function useBuyerCart() {
   const queryClient = useQueryClient()
+  const authReady = useAuthStore((s) => s.hasHydrated && !!s.token)
   const cartKey = useScopedQueryKey('buyer-cart')
 
   const cartQuery = useQuery({
     queryKey: cartKey,
     queryFn: async () => (await getCart()).data.data as Cart | undefined,
+    enabled: authReady,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -31,7 +34,7 @@ export function useBuyerCart() {
 
   const productsQuery = useQuery({
     queryKey: productsKey,
-    enabled: productIds.length > 0,
+    enabled: authReady && productIds.length > 0,
     queryFn: async () => {
       const map = new Map<string, Product>()
       const results = await Promise.all(

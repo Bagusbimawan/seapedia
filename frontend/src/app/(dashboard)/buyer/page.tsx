@@ -10,10 +10,12 @@ import { getBalance } from '@/lib/api/wallet'
 import { getCart } from '@/lib/api/cart'
 import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { BUYER_NAV } from '@/lib/nav'
 
 export default function BuyerDashboardPage() {
+  const { isReady } = useAuth()
   const walletKey = useScopedQueryKey('buyer-wallet')
   const cartKey = useScopedQueryKey('buyer-cart')
   const ordersKey = useScopedQueryKey('buyer-orders-summary')
@@ -21,14 +23,23 @@ export default function BuyerDashboardPage() {
   const { data: wallet } = useQuery({
     queryKey: walletKey,
     queryFn: async () => (await getBalance()).data.data,
+    enabled: isReady,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
   const { data: cart } = useQuery({
     queryKey: cartKey,
     queryFn: async () => (await getCart()).data.data,
+    enabled: isReady,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
   const { data: orders } = useQuery({
     queryKey: ordersKey,
     queryFn: async () => (await buyerOrders({ limit: 5 })).data.data,
+    enabled: isReady,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   return (

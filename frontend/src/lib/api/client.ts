@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import Cookies from 'js-cookie'
+import { clearSession } from '@/lib/authSession'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const client = axios.create({
@@ -30,12 +30,7 @@ client.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Clear zustand auth state
-      useAuthStore.getState().clearAuth()
-
-      // Remove cookies
-      Cookies.remove('seapedia-token')
-      Cookies.remove('seapedia-role')
+      clearSession()
 
       // Redirect to login (only in browser)
       if (typeof window !== 'undefined') {

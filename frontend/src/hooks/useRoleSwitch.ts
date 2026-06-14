@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Cookies from 'js-cookie'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { updateActiveRole } from '@/lib/authSession'
 import { switchRole as switchRoleApi } from '@/lib/api/auth'
 import type { Role } from '@/types'
 
@@ -11,7 +10,6 @@ type SwitchableRole = Exclude<Role, 'ADMIN' | 'PENDING'>
 
 export function useRoleSwitch() {
   const router = useRouter()
-  const { setActiveRole } = useAuthStore()
   const [loading, setLoading] = useState<SwitchableRole | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,10 +24,7 @@ export function useRoleSwitch() {
         return
       }
 
-      setActiveRole(data.token, data.active_role)
-      Cookies.set('seapedia-token', data.token, { expires: 7, sameSite: 'lax' })
-      Cookies.set('seapedia-role', data.active_role, { expires: 7, sameSite: 'lax' })
-
+      updateActiveRole(data.token, data.active_role)
       router.push(`/${data.active_role.toLowerCase()}`)
     } catch (err: unknown) {
       const errorMsg =

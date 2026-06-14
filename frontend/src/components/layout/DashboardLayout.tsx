@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
 import { Fish, LogOut, ChevronRight } from 'lucide-react'
-import Cookies from 'js-cookie'
+import { clearSession } from '@/lib/authSession'
 import { useAuth } from '@/hooks/useAuth'
 import { RoleBadge } from '@/components/ui/Badge'
 import RoleSwitcher from '@/components/auth/RoleSwitcher'
@@ -37,12 +37,10 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, clearAuth } = useAuth()
+  const { user } = useAuth()
 
   const handleLogout = () => {
-    clearAuth()
-    Cookies.remove('seapedia-token')
-    Cookies.remove('seapedia-role')
+    clearSession()
     router.push('/login')
   }
 

@@ -7,9 +7,11 @@ interface AuthState {
   user: User | null
   activeRole: Role | null
   isAuthenticated: boolean
+  hasHydrated: boolean
   setAuth: (token: string, user: User, activeRole: Role) => void
   setActiveRole: (token: string, role: Role) => void
   clearAuth: () => void
+  setHasHydrated: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,6 +21,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       activeRole: null,
       isAuthenticated: false,
+      hasHydrated: false,
 
       setAuth: (token: string, user: User, activeRole: Role) => {
         set({ token, user, activeRole, isAuthenticated: true })
@@ -31,6 +34,10 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         set({ token: null, user: null, activeRole: null, isAuthenticated: false })
       },
+
+      setHasHydrated: () => {
+        set({ hasHydrated: true })
+      },
     }),
     {
       name: 'seapedia-auth',
@@ -40,6 +47,9 @@ export const useAuthStore = create<AuthState>()(
         activeRole: state.activeRole,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => () => {
+        useAuthStore.getState().setHasHydrated()
+      },
     }
   )
 )
