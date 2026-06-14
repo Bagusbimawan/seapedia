@@ -24,6 +24,7 @@ import (
 	httphandler "github.com/bagus/seapedia/internal/delivery/http"
 	"github.com/bagus/seapedia/internal/delivery/http/handler"
 	"github.com/bagus/seapedia/internal/pkg/clock"
+	"github.com/bagus/seapedia/internal/pkg/response"
 	"github.com/bagus/seapedia/internal/repository/postgres"
 	addruc "github.com/bagus/seapedia/internal/usecase/address"
 	adminuc "github.com/bagus/seapedia/internal/usecase/admin"
@@ -108,6 +109,9 @@ func main() {
 	// Fiber app
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			if e, ok := err.(*fiber.Error); ok && e.Code == fiber.StatusNotFound {
+				return response.NotFound(c, "endpoint not found")
+			}
 			return handler.HandleErr(c, err)
 		},
 	})

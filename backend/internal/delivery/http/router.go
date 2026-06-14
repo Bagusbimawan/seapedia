@@ -110,5 +110,8 @@ func NewRouter(app *fiber.App, cfg *config.Config, h *Handlers) {
 
 // RegisterSwagger mounts OpenAPI documentation UI.
 func RegisterSwagger(app *fiber.App) {
+	app.Get("/swagger", func(c *fiber.Ctx) error {
+		return c.Redirect("/swagger/index.html", fiber.StatusMovedPermanently)
+	})
 	app.Get("/swagger/*", swagger.WrapHandler)
 }

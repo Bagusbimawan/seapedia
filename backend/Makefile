@@ -1,4 +1,4 @@
-.PHONY: run build test migrate-up migrate-down seed swag lint tidy docker-up docker-down
+.PHONY: run build test migrate-up migrate-down seed swag swagger stop lint tidy docker-up docker-down
 
 APP_NAME=seapedia
 MAIN=./cmd/api
@@ -7,6 +7,10 @@ DB_URL?=postgres://seapedia:seapedia123@localhost:5432/seapedia_db?sslmode=disab
 
 run:
 	go run $(MAIN)/main.go
+
+stop:
+	@-lsof -ti :8080 | xargs kill -9 2>/dev/null || true
+	@echo "Port 8080 cleared"
 
 dev:
 	air
