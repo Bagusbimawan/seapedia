@@ -9,6 +9,7 @@ import { usePublicStore } from '@/stores/usePublicStore'
 export default function FeaturedProducts() {
   const products = usePublicStore((s) => s.products)
   const productsLoading = usePublicStore((s) => s.productsLoading)
+  const productsError = usePublicStore((s) => s.productsError)
   const fetchProducts = usePublicStore((s) => s.fetchProducts)
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function FeaturedProducts() {
           </div>
         ) : items.length === 0 ? (
           <div className="rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center text-slate-400">
-            <p>Belum ada produk tersedia.</p>
+            <p>{productsError ? 'Gagal memuat produk. Coba refresh halaman.' : 'Belum ada produk tersedia.'}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

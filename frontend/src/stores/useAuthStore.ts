@@ -1,6 +1,27 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { User, Role } from '@/types'
+
+const safeLocalStorage = {
+  getItem: (name: string) => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = localStorage.getItem(name)
+      if (!raw) return null
+      JSON.parse(raw)
+      return raw
+    } catch {
+      localStorage.removeItem(name)
+      return null
+    }
+  },
+  setItem: (name: string, value: string) => {
+    localStorage.setItem(name, value)
+  },
+  removeItem: (name: string) => {
+    localStorage.removeItem(name)
+  },
+}
 
 interface AuthState {
   token: string | null
@@ -41,6 +62,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'seapedia-auth',
+      storage: createJSONStorage(() => safeLocalStorage),
       partialize: (state) => ({
         token: state.token,
         user: state.user,

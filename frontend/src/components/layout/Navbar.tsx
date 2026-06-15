@@ -19,9 +19,12 @@ const dashboardLinks: Record<Exclude<Role, 'PENDING'>, { href: string; label: st
 }
 
 export default function Navbar() {
-  const { isAuthenticated, user, activeRole } = useAuth()
+  const { isAuthenticated, user, activeRole, hasHydrated } = useAuth()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Hindari hydration mismatch: SSR & pre-hydration tampil seperti guest
+  const showAuthenticated = hasHydrated && isAuthenticated
 
   const handleLogout = () => {
     logoutAndRedirect()
@@ -56,7 +59,7 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {isAuthenticated && dashboardLink && (
+            {showAuthenticated && dashboardLink && (
               <Link
                 href={dashboardLink.href}
                 className="rounded-lg px-3 py-2 text-sm font-medium text-ocean-700 transition-colors hover:bg-ocean-50"
@@ -67,7 +70,7 @@ export default function Navbar() {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            {isAuthenticated ? (
+            {showAuthenticated ? (
               <>
                 <div className="flex items-center gap-2 rounded-full bg-slate-100 py-1 pl-1 pr-3">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-ocean-600 text-xs font-bold text-white">
@@ -102,11 +105,11 @@ export default function Navbar() {
         <div className="flex flex-col gap-1 px-4 py-3">
           <Link href="/products" className="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50" onClick={() => setMobileOpen(false)}>Produk</Link>
           <Link href="/reviews" className="rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50" onClick={() => setMobileOpen(false)}>Ulasan</Link>
-          {isAuthenticated && dashboardLink && (
+          {showAuthenticated && dashboardLink && (
             <Link href={dashboardLink.href} className="rounded-xl px-3 py-2.5 text-sm font-medium text-ocean-700 hover:bg-ocean-50" onClick={() => setMobileOpen(false)}>{dashboardLink.label}</Link>
           )}
           <div className="mt-2 border-t border-slate-100 pt-2">
-            {isAuthenticated ? (
+            {showAuthenticated ? (
               <button onClick={() => { setMobileOpen(false); handleLogout() }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-red-600 hover:bg-red-50">
                 <LogOut className="h-4 w-4" /> Keluar
               </button>

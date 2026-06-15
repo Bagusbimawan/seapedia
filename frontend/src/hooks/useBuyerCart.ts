@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react'
 import { useCartStore } from '@/stores/useCartStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { getUserIdFromToken } from '@/lib/authSession'
 import type { CartItem } from '@/types'
 
 export interface CartLineItem {
@@ -32,8 +33,9 @@ function toLineItem(item: CartItem): CartLineItem {
 
 export function useBuyerCart() {
   const hasHydrated = useAuthStore((s) => s.hasHydrated)
+  const token = useAuthStore((s) => s.token)
   const authReady = useAuthStore((s) => s.hasHydrated && !!s.token)
-  const userId = useAuthStore((s) => s.user?.id)
+  const userId = useAuthStore((s) => s.user?.id) ?? getUserIdFromToken(token)
   const cart = useCartStore((s) => s.cart)
   const isLoading = useCartStore((s) => s.isLoading)
   const isError = useCartStore((s) => s.isError)
@@ -41,7 +43,7 @@ export function useBuyerCart() {
   const setCart = useCartStore((s) => s.setCart)
 
   useEffect(() => {
-    if (!authReady || !userId) return
+    if (!authReady || !userId || userId === 'anon') return
     void fetchCart()
   }, [authReady, userId, fetchCart])
 
@@ -56,8 +58,8 @@ export function useBuyerCart() {
   )
 
   const hasItems = lineItems.length > 0
-  const waitingAuth = !hasHydrated || (hasHydrated && !authReady)
-  const showLoading = waitingAuth || (authReady && isLoading && !cart)
+  // Tampilkan item cache langsung; skeleton hanya bila belum ada data sama sekali
+  const showLoading = !hasItems && (!hasHydrated || !authReady || isLoading)
 
   return {
     cart: cart ?? undefined,

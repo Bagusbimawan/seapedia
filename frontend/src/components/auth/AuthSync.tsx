@@ -66,7 +66,8 @@ export default function AuthSync() {
       }
 
       if (cookieRole && activeRole !== cookieRole && jwtRole === cookieRole) {
-        updateActiveRole(cookieToken, cookieRole)
+        useAuthStore.getState().setActiveRole(cookieToken, cookieRole)
+        return
       }
     }
 

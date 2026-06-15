@@ -15,12 +15,11 @@ OS_FAMILY="$(detect_os_family)"
 
 echo "==> SEAPEDIA update frontend ($OS_FAMILY)"
 
-if [[ ! -f frontend/.env.production ]]; then
-  echo "==> Buat frontend/.env.production"
-  cat > frontend/.env.production <<'EOF'
+echo "==> Pastikan frontend/.env.production"
+cat > frontend/.env.production <<'EOF'
 NEXT_PUBLIC_API_URL=https://seapedia.be.bagusbimawan.com/api/v1
 EOF
-fi
+echo "    NEXT_PUBLIC_API_URL=https://seapedia.be.bagusbimawan.com/api/v1"
 
 echo "==> Frontend: install + build"
 cd "$ROOT/frontend"
@@ -51,5 +50,13 @@ fi
 
 echo ""
 echo "✓ Frontend update selesai"
-sleep 2
-curl -sf "http://127.0.0.1:3000" >/dev/null && echo "  ✓ Frontend OK (:3000)" || echo "  ✗ Frontend tidak merespons di :3000"
+echo "  Tunggu service siap..."
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -sf "http://127.0.0.1:3000" >/dev/null 2>&1; then
+    echo "  ✓ Frontend OK (:3000)"
+    exit 0
+  fi
+  sleep 2
+done
+echo "  ✗ Frontend tidak merespons di :3000 — cek: sudo journalctl -u seapedia-frontend -n 50"
+exit 1
