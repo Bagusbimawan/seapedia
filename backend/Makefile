@@ -1,4 +1,4 @@
-.PHONY: run build test migrate-up migrate-down db-reset seed swag swagger stop lint tidy docker-up docker-down
+.PHONY: run build test migrate-up migrate-down db-reset seed swag swagger stop lint tidy docker-up docker-down test-api
 
 APP_NAME=seapedia
 MAIN=./cmd/api
@@ -69,6 +69,9 @@ docker-down:
 
 docker-build:
 	docker build -t $(APP_NAME):latest .
+
+test-api:
+	@bash ./scripts/test-api.sh
 
 clean:
 	rm -rf bin/ tmp/ coverage.out coverage.html
