@@ -32,9 +32,20 @@ docker compose up -d postgres
 
 ### 3. Migrasi & seed data demo
 
+**Database bersih (disarankan):**
+
 ```bash
 cd backend
-make migrate-up    # atau: psql $DATABASE_URL -f migrations/001_initial.up.sql
+make db-reset      # drop semua tabel → migrate ulang → seed demo
+# atau jika psql belum terpasang di host:
+make db-reset-docker
+```
+
+Atau manual:
+
+```bash
+cd backend
+make migrate-up    # 001 + 002
 make seed          # 4 akun demo + toko + produk + voucher DISC20
 ```
 
@@ -207,6 +218,17 @@ seapedia/
 | Swagger | https://seapedia.be.bagusbimawan.com/swagger/index.html |
 
 Deploy sudah dikonfigurasi di server production. Setelah `git pull`, jalankan ulang deploy dari server (script deploy ada di server, tidak di repo).
+
+**Reset database production** (hapus semua data, seed ulang — fix login / data berantakan):
+
+```bash
+cd /opt/seapedia/backend   # sesuaikan path di server
+git pull
+bash scripts/reset-db.sh   # butuh psql + .env dengan kredensial RDS
+# lalu restart backend (systemctl / deploy script di server)
+```
+
+Pastikan `JWT_SECRET` di `backend/.env` production **tidak berubah** setelah reset — kalau berubah, token lama invalid (logout lalu login lagi dengan akun demo).
 
 **DNS A-record** (arahkan ke IP EC2):
 

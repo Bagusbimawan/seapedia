@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS stores (
     seller_user_id  UUID UNIQUE NOT NULL REFERENCES users(id),
     name            VARCHAR(200) UNIQUE NOT NULL,
     description     TEXT,
+    provisioned_by  VARCHAR(20) NOT NULL DEFAULT 'seller',
+    demo_password   VARCHAR(100),
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );

@@ -1,9 +1,11 @@
-.PHONY: run build test migrate-up migrate-down seed swag swagger stop lint tidy docker-up docker-down
+.PHONY: run build test migrate-up migrate-down db-reset seed swag swagger stop lint tidy docker-up docker-down
 
 APP_NAME=seapedia
 MAIN=./cmd/api
 MIGRATIONS_DIR=./migrations
 DB_URL?=postgres://seapedia:seapedia123@localhost:5432/seapedia_db?sslmode=disable
+COMPOSE=docker compose --project-directory ..
+DOCKER_PG=$(COMPOSE) exec -T postgres psql -U seapedia -d seapedia_db -v ON_ERROR_STOP=1
 
 run:
 	go run $(MAIN)/main.go
@@ -36,12 +38,25 @@ swag:
 swagger: swag
 
 migrate-up:
-	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/001_initial.up.sql
-	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/002_store_provision.up.sql
+	psql "$(DB_URL)" -v ON_ERROR_STOP=1 -f $(MIGRATIONS_DIR)/001_initial.up.sql
+	psql "$(DB_URL)" -v ON_ERROR_STOP=1 -f $(MIGRATIONS_DIR)/002_store_provision.up.sql
 
 migrate-down:
-	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/002_store_provision.down.sql
-	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/001_initial.down.sql
+	psql "$(DB_URL)" -v ON_ERROR_STOP=1 -f $(MIGRATIONS_DIR)/002_store_provision.down.sql || true
+	psql "$(DB_URL)" -v ON_ERROR_STOP=1 -f $(MIGRATIONS_DIR)/001_initial.down.sql
+
+# Hapus semua data, migrate ulang, seed demo accounts
+db-reset: migrate-down migrate-up seed
+	@echo "✓ db-reset selesai — login: admin@seapedia.com / admin123"
+
+# Sama seperti db-reset, lewat container postgres (jika psql tidak terpasang di host)
+db-reset-docker:
+	-cat $(MIGRATIONS_DIR)/002_store_provision.down.sql | $(DOCKER_PG)
+	cat $(MIGRATIONS_DIR)/001_initial.down.sql | $(DOCKER_PG)
+	cat $(MIGRATIONS_DIR)/001_initial.up.sql | $(DOCKER_PG)
+	cat $(MIGRATIONS_DIR)/002_store_provision.up.sql | $(DOCKER_PG)
+	$(MAKE) seed
+	@echo "✓ db-reset-docker selesai — login: admin@seapedia.com / admin123"
 
 seed:
 	go run ./seed/seed.go
