@@ -31,7 +31,7 @@ PSQL=(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_S
 echo "==> RESET DATABASE: ${DB_NAME} @ ${DB_HOST}"
 echo "    Semua data akan dihapus!"
 sleep 2
-
+x
 echo "==> migrate down..."
 "${PSQL[@]}" -f migrations/002_store_provision.down.sql 2>/dev/null || true
 "${PSQL[@]}" -f migrations/001_initial.down.sql

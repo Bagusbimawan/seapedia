@@ -86,18 +86,39 @@ func (r *cartRepository) UpdateStoreID(ctx context.Context, cartID string, store
 }
 
 func (r *cartRepository) GetItemsWithProducts(ctx context.Context, cartID string) ([]*cart.CartItem, error) {
-	var models []CartItemModel
-	if err := r.db.WithContext(ctx).Where("cart_id = ?", cartID).Find(&models).Error; err != nil {
+	type row struct {
+		CartItemModel
+		ProductName  string `gorm:"column:product_name"`
+		ProductPrice int64  `gorm:"column:product_price"`
+		ProductStock int    `gorm:"column:product_stock"`
+	}
+
+	var rows []row
+	err := r.db.WithContext(ctx).
+		Table("cart_items").
+		Select(`cart_items.id, cart_items.cart_id, cart_items.product_id, cart_items.quantity,
+			cart_items.created_at, cart_items.updated_at,
+			products.name AS product_name, products.price AS product_price, products.stock AS product_stock`).
+		Joins("JOIN products ON products.id = cart_items.product_id").
+		Where("cart_items.cart_id = ?", cartID).
+		Scan(&rows).Error
+	if err != nil {
 		return nil, err
 	}
-	items := make([]*cart.CartItem, 0, len(models))
-	for _, m := range models {
-		mc := m
+
+	items := make([]*cart.CartItem, 0, len(rows))
+	for _, row := range rows {
+		mc := row.CartItemModel
 		items = append(items, &cart.CartItem{
 			ID:        mc.ID,
 			CartID:    mc.CartID,
 			ProductID: mc.ProductID,
 			Quantity:  mc.Quantity,
+			Product: &cart.ProductSnapshot{
+				Name:  row.ProductName,
+				Price: row.ProductPrice,
+				Stock: row.ProductStock,
+			},
 			CreatedAt: mc.CreatedAt,
 			UpdatedAt: mc.UpdatedAt,
 		})

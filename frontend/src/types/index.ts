@@ -65,10 +65,11 @@ export interface Address {
 }
 
 export interface CartItem {
-  id: string
-  cart_id: string
   product_id: string
   quantity: number
+  name?: string
+  price?: number
+  stock?: number
 }
 
 export interface Cart {

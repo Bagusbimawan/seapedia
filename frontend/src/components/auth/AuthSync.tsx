@@ -7,6 +7,7 @@ import {
   clearSession,
   establishSession,
   fetchMeWithToken,
+  getActiveRoleFromToken,
   getUserIdFromToken,
   updateActiveRole,
 } from '@/lib/authSession'
@@ -50,7 +51,10 @@ export default function AuthSync() {
       }
 
       if (cookieRole && activeRole !== cookieRole) {
-        updateActiveRole(cookieToken, cookieRole)
+        const jwtRole = getActiveRoleFromToken(cookieToken)
+        if (jwtRole === cookieRole) {
+          updateActiveRole(cookieToken, cookieRole)
+        }
       }
     }
 

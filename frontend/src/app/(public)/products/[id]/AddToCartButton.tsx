@@ -6,8 +6,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { addItem } from '@/lib/api/cart'
+import { syncBuyerCartCache } from '@/lib/cartCache'
 import { getApiError } from '@/lib/apiError'
-import { getScopedQueryKey } from '@/lib/queryKeys'
 import Button from '@/components/ui/Button'
 import QuantityStepper from '@/components/ui/QuantityStepper'
 
@@ -37,8 +37,8 @@ export default function AddToCartButton({ productId, stock }: AddToCartButtonPro
     setError(null)
     setLoading(true)
     try {
-      await addItem({ product_id: productId, quantity: qty })
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('buyer-cart') })
+      const res = await addItem({ product_id: productId, quantity: qty })
+      syncBuyerCartCache(queryClient, res.data.data)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err: unknown) {

@@ -17,7 +17,8 @@ import { validate } from '@/lib/api/discounts'
 import { getBalance } from '@/lib/api/wallet'
 import { getApiError } from '@/lib/apiError'
 import { useBuyerCart } from '@/hooks/useBuyerCart'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { refreshBuyerCartCache } from '@/lib/cartCache'
+import { useScopedQueryKey } from '@/lib/queryKeys'
 import { formatRupiah } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
 import type { DeliveryMethod } from '@/types'
@@ -174,7 +175,7 @@ export default function BuyerCheckoutPage() {
       router.replace(`/buyer/orders/${orderId}`)
     } catch (err: unknown) {
       setError(getApiError(err, 'Checkout gagal'))
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('buyer-cart') })
+      await refreshBuyerCartCache(queryClient)
       await refetchWallet()
     } finally {
       setLoading(false)
@@ -214,7 +215,7 @@ export default function BuyerCheckoutPage() {
             <div className="flex flex-col gap-2">
               {lineItems.map((item, index) => (
                 <div key={`${item.product_id}-${index}`} className="flex justify-between text-sm">
-                  <span className="text-slate-700">{item.product?.name ?? item.product_id} × {item.quantity}</span>
+                  <span className="text-slate-700">{item.name} × {item.quantity}</span>
                   <span className="font-medium text-slate-900">{formatRupiah(item.lineTotal)}</span>
                 </div>
               ))}

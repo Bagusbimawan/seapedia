@@ -18,6 +18,19 @@ export function getUserIdFromToken(token: string | null | undefined): string {
   }
 }
 
+export function getActiveRoleFromToken(token: string | null | undefined): Role | null {
+  if (!token) return null
+  try {
+    const part = token.split('.')[1]
+    if (!part) return null
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'))
+    const payload = JSON.parse(json) as { active_role?: string }
+    return (payload.active_role as Role) ?? null
+  } catch {
+    return null
+  }
+}
+
 function setAuthCookies(token: string, role: Role) {
   Cookies.set('seapedia-token', token, COOKIE_OPTS)
   Cookies.set('seapedia-role', role, COOKIE_OPTS)

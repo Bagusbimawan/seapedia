@@ -237,6 +237,9 @@ type UpdateCartItemReq struct {
 type CartItemResponse struct {
 	ProductID string `json:"product_id"`
 	Quantity  int    `json:"quantity"`
+	Name      string `json:"name,omitempty"`
+	Price     int64  `json:"price,omitempty"`
+	Stock     int    `json:"stock,omitempty"`
 }
 
 type CartResponse struct {
@@ -248,10 +251,16 @@ type CartResponse struct {
 func ToCartResponse(c *cart.Cart) CartResponse {
 	items := make([]CartItemResponse, 0, len(c.Items))
 	for _, item := range c.Items {
-		items = append(items, CartItemResponse{
+		resp := CartItemResponse{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
-		})
+		}
+		if item.Product != nil {
+			resp.Name = item.Product.Name
+			resp.Price = item.Product.Price
+			resp.Stock = item.Product.Stock
+		}
+		items = append(items, resp)
 	}
 	return CartResponse{ID: c.ID, StoreID: c.StoreID, Items: items}
 }

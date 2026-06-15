@@ -12,26 +12,26 @@ import QuantityStepper from '@/components/ui/QuantityStepper'
 import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton, SummaryRow } from '@/components/ui/ListHelpers'
 import { updateItem, removeItem, clearCart } from '@/lib/api/cart'
+import { refreshBuyerCartCache, syncBuyerCartCache } from '@/lib/cartCache'
 import { useBuyerCart } from '@/hooks/useBuyerCart'
-import { getScopedQueryKey } from '@/lib/queryKeys'
 import { formatRupiah } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
 
 export default function BuyerCartPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { lineItems, subtotal, isLoading, isEmpty, isReady } = useBuyerCart()
+  const { lineItems, subtotal, isLoading, isEmpty, isReady, isError } = useBuyerCart()
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: getScopedQueryKey('buyer-cart') })
+  const refresh = () => refreshBuyerCartCache(queryClient)
 
   const handleUpdate = async (productId: string, qty: number) => {
-    await updateItem(productId, { quantity: qty })
-    await refresh()
+    const res = await updateItem(productId, { quantity: qty })
+    syncBuyerCartCache(queryClient, res.data.data)
   }
 
   const handleRemove = async (productId: string) => {
-    await removeItem(productId)
-    await refresh()
+    const res = await removeItem(productId)
+    syncBuyerCartCache(queryClient, res.data.data)
   }
 
   const handleClear = async () => {
@@ -44,6 +44,13 @@ export default function BuyerCartPage() {
     <DashboardLayout title="Keranjang" subtitle="Review item sebelum checkout" navItems={BUYER_NAV} role="BUYER">
       {isLoading ? (
         <LoadingSkeleton rows={3} />
+      ) : isError ? (
+        <EmptyState
+          icon={ShoppingCart}
+          title="Gagal memuat keranjang"
+          description="Silakan logout lalu login ulang sebagai buyer, atau coba refresh halaman."
+          action={<Button variant="primary" onClick={() => refresh()}>Coba Lagi</Button>}
+        />
       ) : isEmpty ? (
         <EmptyState
           icon={ShoppingCart}
@@ -58,7 +65,7 @@ export default function BuyerCartPage() {
               <Card key={item.product_id}>
                 <div className="flex gap-4">
                   <ProductImage
-                    name={item.product?.name}
+                    name={item.name}
                     size="sm"
                     className="h-16 w-16 flex-shrink-0 rounded-xl sm:h-20 sm:w-20"
                   />
@@ -67,10 +74,10 @@ export default function BuyerCartPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-slate-900">
-                          {item.product?.name ?? item.product_id}
+                          {item.name}
                         </p>
                         <p className="text-sm font-medium text-ocean-600">
-                          {formatRupiah(item.product?.price ?? 0)} / item
+                          {formatRupiah(item.price)} / item
                         </p>
                         <p className="mt-1 text-sm font-semibold text-slate-700">
                           {formatRupiah(item.lineTotal)}
@@ -93,7 +100,7 @@ export default function BuyerCartPage() {
                         value={item.quantity}
                         onChange={(qty) => handleUpdate(item.product_id, qty)}
                         min={1}
-                        max={item.product?.stock ?? 99}
+                        max={item.stock || 99}
                         step={1}
                         size="sm"
                       />
