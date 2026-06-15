@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { clearSession } from '@/lib/authSession'
+import { clearSession, logoutAndRedirect } from '@/lib/authSession'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const client = axios.create({
@@ -30,12 +30,7 @@ client.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      clearSession()
-
-      // Redirect to login (only in browser)
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
-      }
+      logoutAndRedirect()
     }
 
     return Promise.reject(error)

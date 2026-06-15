@@ -12,3 +12,6 @@ export const switchRole = (role: Role) =>
 
 export const getMe = () =>
   client.get<ApiResponse<User>>('/auth/me')
+
+export const logout = () =>
+  client.post<ApiResponse<{ message: string }>>('/auth/logout', {})

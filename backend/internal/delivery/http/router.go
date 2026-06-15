@@ -56,6 +56,7 @@ func NewRouter(app *fiber.App, cfg *config.Config, h *Handlers) {
 	authMW := middleware.Auth(cfg)
 
 	api.Get("/auth/me", authMW, h.Auth.Me)
+	api.Post("/auth/logout", authMW, h.Auth.Logout)
 	api.Post("/auth/switch-role", authMW, h.Auth.SwitchRole)
 
 	// Seller routes

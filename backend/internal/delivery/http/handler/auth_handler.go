@@ -108,3 +108,14 @@ func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	}
 	return response.OK(c, dto.ToUserResponse(u))
 }
+
+// Logout godoc
+// @Summary Logout (client clears token; server acknowledges)
+// @Tags auth
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} response.R
+// @Router /auth/logout [post]
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	return response.OK(c, fiber.Map{"message": "logged out"})
+}

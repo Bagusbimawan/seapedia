@@ -16,6 +16,7 @@ import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { useAuth } from '@/hooks/useAuth'
 import { cachedQueryOptions } from '@/lib/queryConfig'
+import { shouldShowQuerySkeleton } from '@/lib/queryLoading'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { BUYER_NAV } from '@/lib/nav'
 import type { OrderStatus, PaginatedData, Order } from '@/types'
@@ -37,9 +38,8 @@ export default function BuyerDashboardPage() {
     queryFn: async () => (await getCart()).data.data,
     enabled: isReady,
     ...cachedQueryOptions,
-    placeholderData: (previous) => previous,
   })
-  const { data: orders, isLoading: ordersLoading } = useQuery({
+  const { data: orders, isLoading: ordersLoading, isError: ordersError } = useQuery({
     queryKey: ordersKey,
     queryFn: async () => (await buyerOrders({ limit: 5 })).data.data as PaginatedData<Order> | undefined,
     enabled: isReady,
@@ -47,7 +47,11 @@ export default function BuyerDashboardPage() {
   })
 
   const orderItems = orders?.items ?? []
-  const showOrdersLoading = !isReady || (ordersLoading && orderItems.length === 0)
+  const showOrdersLoading = shouldShowQuerySkeleton(isReady, {
+    isLoading: ordersLoading,
+    isError: ordersError,
+    data: orders,
+  })
 
   return (
     <DashboardLayout
@@ -79,6 +83,12 @@ export default function BuyerDashboardPage() {
 
         {showOrdersLoading ? (
           <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+        ) : ordersError ? (
+          <EmptyState
+            icon={Package}
+            title="Gagal memuat riwayat"
+            description="Tarik refresh halaman atau buka menu Riwayat Pembelian."
+          />
         ) : orderItems.length === 0 ? (
           <EmptyState
             icon={Package}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { LogOut, Fish, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
-import { clearSession } from '@/lib/authSession'
+import { logoutAndRedirect } from '@/lib/authSession'
 import { useAuth } from '@/hooks/useAuth'
 import { RoleBadge } from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -24,8 +24,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = () => {
-    clearSession()
-    router.push('/login')
+    logoutAndRedirect()
   }
 
   const dashboardLink =

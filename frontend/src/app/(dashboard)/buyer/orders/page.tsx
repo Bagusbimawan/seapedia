@@ -12,6 +12,7 @@ import { OrderStatusBadge } from '@/components/ui/Badge'
 import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { cachedQueryOptions } from '@/lib/queryConfig'
+import { shouldShowQuerySkeleton } from '@/lib/queryLoading'
 import { useAuth } from '@/hooks/useAuth'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { BUYER_NAV } from '@/lib/nav'
@@ -23,12 +24,11 @@ export default function BuyerOrdersPage() {
   const [refreshing, setRefreshing] = useState(false)
   const ordersKey = useScopedQueryKey('buyer-orders', page)
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ordersKey,
     queryFn: async () => (await buyerOrders({ page, limit: 10 })).data.data as PaginatedData<Order> | undefined,
     enabled: isReady,
     ...cachedQueryOptions,
-    placeholderData: (previous: PaginatedData<Order> | undefined) => previous,
   })
 
   const handleRefresh = async () => {
@@ -40,7 +40,7 @@ export default function BuyerOrdersPage() {
     }
   }
 
-  const showSkeleton = !isReady || (isLoading && !data)
+  const showSkeleton = shouldShowQuerySkeleton(isReady, { isLoading, isError, data })
 
   return (
     <DashboardLayout title="Riwayat Pembelian" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">
@@ -53,6 +53,13 @@ export default function BuyerOrdersPage() {
 
       {showSkeleton ? (
         <LoadingSkeleton rows={4} />
+      ) : isError ? (
+        <EmptyState
+          icon={Package}
+          title="Gagal memuat riwayat"
+          description="Silakan coba refresh atau login ulang."
+          action={<Button variant="primary" onClick={() => refetch()}>Coba Lagi</Button>}
+        />
       ) : !data?.items?.length ? (
         <EmptyState
           icon={Package}

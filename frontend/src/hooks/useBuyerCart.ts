@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCart } from '@/lib/api/cart'
 import { cachedQueryOptions } from '@/lib/queryConfig'
 import { refreshBuyerCartCache, syncBuyerCartCache } from '@/lib/cartCache'
+import { shouldShowQuerySkeleton } from '@/lib/queryLoading'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { useAuthStore } from '@/stores/useAuthStore'
 import type { Cart, CartItem } from '@/types'
@@ -45,7 +46,6 @@ export function useBuyerCart() {
     queryFn: async () => (await getCart()).data.data as Cart | undefined,
     enabled: authReady,
     ...cachedQueryOptions,
-    placeholderData: (previous) => previous,
   })
 
   const lineItems: CartLineItem[] = useMemo(() => {
@@ -59,9 +59,7 @@ export function useBuyerCart() {
   )
 
   const clearCartCache = () => {
-    queryClient.setQueryData(cartKey, (old: Cart | undefined) =>
-      old ? { ...old, items: [], store_id: undefined } : old
-    )
+    queryClient.setQueryData(cartKey, { id: '', user_id: '', items: [] } satisfies Cart)
     void refreshBuyerCartCache(queryClient)
   }
 
@@ -69,17 +67,16 @@ export function useBuyerCart() {
     await refreshBuyerCartCache(queryClient)
   }
 
-  const hasItems = (cartQuery.data?.items?.length ?? 0) > 0
-  // cartQuery.isLoading = isPending && isFetching, which is false for disabled queries
-  const isInitialLoading = !hasHydrated || cartQuery.isLoading
+  const hasItems = lineItems.length > 0
+  const isLoading = !hasHydrated || shouldShowQuerySkeleton(authReady, cartQuery)
 
   return {
     cart: cartQuery.data,
     lineItems,
     subtotal,
-    isLoading: isInitialLoading,
+    isLoading,
     isFetching: cartQuery.isFetching,
-    isEmpty: !isInitialLoading && !hasItems,
+    isEmpty: authReady && !isLoading && !cartQuery.isError && !hasItems,
     isReady: hasItems,
     isError: cartQuery.isError,
     error: cartQuery.error,

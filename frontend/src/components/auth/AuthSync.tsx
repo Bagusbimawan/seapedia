@@ -11,6 +11,7 @@ import {
   getUserIdFromToken,
   updateActiveRole,
 } from '@/lib/authSession'
+import { switchRole as switchRoleApi } from '@/lib/api/auth'
 import type { Role } from '@/types'
 
 /** Keeps zustand auth + React Query aligned with cookies (middleware source of truth). */
@@ -26,7 +27,7 @@ export default function AuthSync() {
       const { token, user, activeRole, isAuthenticated } = useAuthStore.getState()
 
       if (!cookieToken) {
-        if (isAuthenticated) clearSession()
+        if (isAuthenticated) clearSession({ redirect: false })
         return
       }
 
@@ -43,25 +44,36 @@ export default function AuthSync() {
               : me.roles.length === 1
                 ? (me.roles[0] as Role)
                 : 'PENDING'
-          establishSession(cookieToken, me, role)
+          establishSession(cookieToken, me, role, { forceClear: true })
         } catch {
-          clearSession()
+          clearSession({ redirect: false })
         }
         return
       }
 
-      if (cookieRole && activeRole !== cookieRole) {
-        const jwtRole = getActiveRoleFromToken(cookieToken)
-        if (jwtRole === cookieRole) {
-          updateActiveRole(cookieToken, cookieRole)
+      const jwtRole = getActiveRoleFromToken(cookieToken)
+      if (cookieRole && cookieRole !== 'PENDING' && jwtRole && jwtRole !== cookieRole) {
+        try {
+          const res = await switchRoleApi(cookieRole)
+          const data = res.data.data
+          if (data?.token) {
+            updateActiveRole(data.token, data.active_role)
+          }
+        } catch {
+          // Cookie role tidak valid untuk JWT — biarkan middleware/handler tangani
         }
+        return
+      }
+
+      if (cookieRole && activeRole !== cookieRole && jwtRole === cookieRole) {
+        updateActiveRole(cookieToken, cookieRole)
       }
     }
 
     sync()
 
     const onFocus = () => {
-      sync()
+      void sync()
     }
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)

@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { getQueryClient } from '@/lib/queryClient'
 import type { Role, User } from '@/types'
 
-const COOKIE_OPTS = { expires: 7, sameSite: 'lax' as const }
+const COOKIE_OPTS = { expires: 7, sameSite: 'lax' as const, path: '/' }
 
 export function getUserIdFromToken(token: string | null | undefined): string {
   if (!token) return 'anon'
@@ -37,8 +37,8 @@ function setAuthCookies(token: string, role: Role) {
 }
 
 function clearAuthCookies() {
-  Cookies.remove('seapedia-token')
-  Cookies.remove('seapedia-role')
+  Cookies.remove('seapedia-token', { path: '/' })
+  Cookies.remove('seapedia-role', { path: '/' })
 }
 
 export async function fetchMeWithToken(token: string): Promise<User> {
@@ -54,31 +54,62 @@ export async function fetchMeWithToken(token: string): Promise<User> {
   return body.data as User
 }
 
+function purgeQueryCache() {
+  const qc = getQueryClient()
+  qc.clear()
+  qc.removeQueries()
+}
+
 export function establishSession(
   token: string,
   user: User,
   activeRole: Role,
   options?: { forceClear?: boolean }
 ) {
-  const prevUserId = getUserIdFromToken(useAuthStore.getState().token)
+  const prevToken = useAuthStore.getState().token
+  const prevUserId = getUserIdFromToken(prevToken)
   const nextUserId = user.id || getUserIdFromToken(token)
 
   useAuthStore.getState().setAuth(token, user, activeRole)
   setAuthCookies(token, activeRole)
 
-  if (options?.forceClear || prevUserId !== nextUserId) {
-    getQueryClient().clear()
+  if (options?.forceClear || prevUserId !== nextUserId || prevToken !== token) {
+    purgeQueryCache()
   }
 }
 
 export function updateActiveRole(token: string, role: Role) {
   useAuthStore.getState().setActiveRole(token, role)
   setAuthCookies(token, role)
-  getQueryClient().clear()
+  purgeQueryCache()
 }
 
-export function clearSession() {
+/** Clear auth + all cached API data. Hard redirect ensures UI resets completely. */
+export function clearSession(options?: { redirect?: boolean }) {
   useAuthStore.getState().clearAuth()
   clearAuthCookies()
-  getQueryClient().clear()
+  purgeQueryCache()
+
+  if (options?.redirect !== false && typeof window !== 'undefined') {
+    window.location.href = '/login'
+  }
+}
+
+export async function logoutAndRedirect() {
+  const token = useAuthStore.getState().token
+  if (token) {
+    const baseURL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1'
+    try {
+      await fetch(`${baseURL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+    } catch {
+      // Tetap logout lokal meski API gagal
+    }
+  }
+  clearSession({ redirect: true })
 }

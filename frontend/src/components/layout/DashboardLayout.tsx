@@ -2,10 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
 import { Fish, LogOut, ChevronRight } from 'lucide-react'
-import { clearSession } from '@/lib/authSession'
+import { logoutAndRedirect } from '@/lib/authSession'
 import { useAuth } from '@/hooks/useAuth'
 import { RoleBadge } from '@/components/ui/Badge'
 import RoleSwitcher from '@/components/auth/RoleSwitcher'
@@ -36,12 +35,10 @@ export default function DashboardLayout({
   role,
 }: DashboardLayoutProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const { user } = useAuth()
 
   const handleLogout = () => {
-    clearSession()
-    router.push('/login')
+    logoutAndRedirect()
   }
 
   const isActive = (href: string) =>
