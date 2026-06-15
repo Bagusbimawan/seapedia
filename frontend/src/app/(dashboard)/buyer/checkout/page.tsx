@@ -17,6 +17,7 @@ import { validate } from '@/lib/api/discounts'
 import { getBalance } from '@/lib/api/wallet'
 import { getApiError } from '@/lib/apiError'
 import { useBuyerCart } from '@/hooks/useBuyerCart'
+import { useAuth } from '@/hooks/useAuth'
 import { refreshBuyerCartCache } from '@/lib/cartCache'
 import { refreshBuyerOrdersCache } from '@/lib/orderCache'
 import { cachedQueryOptions } from '@/lib/queryConfig'
@@ -34,6 +35,7 @@ const DELIVERY_OPTIONS: { value: DeliveryMethod; label: string; fee: number }[] 
 export default function BuyerCheckoutPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const { isReady: authReady } = useAuth()
   const { lineItems, subtotal, isLoading, isEmpty, isReady, isFetching, clearCartCache } = useBuyerCart()
 
   const [addressId, setAddressId] = useState('')
@@ -52,12 +54,14 @@ export default function BuyerCheckoutPage() {
   const { data: addresses } = useQuery({
     queryKey: addressesKey,
     queryFn: async () => (await listAddresses()).data.data ?? [],
+    enabled: authReady,
     ...cachedQueryOptions,
   })
 
   const { data: wallet, refetch: refetchWallet } = useQuery({
     queryKey: walletKey,
     queryFn: async () => (await getBalance()).data.data,
+    enabled: authReady,
     ...cachedQueryOptions,
   })
 

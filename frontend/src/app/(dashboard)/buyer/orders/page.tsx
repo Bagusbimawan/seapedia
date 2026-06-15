@@ -40,7 +40,7 @@ export default function BuyerOrdersPage() {
     }
   }
 
-  const showSkeleton = isLoading && !data
+  const showSkeleton = !isReady || (isLoading && !data)
 
   return (
     <DashboardLayout title="Riwayat Pembelian" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">

@@ -8,6 +8,8 @@ import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { sellerOrderById } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
@@ -16,10 +18,13 @@ interface Props { params: Promise<{ id: string }> }
 
 export default function SellerOrderDetailPage({ params }: Props) {
   const { id } = use(params)
+  const { isReady } = useAuth()
   const orderKey = useScopedQueryKey('seller-order', id)
   const { data: order, isLoading } = useQuery({
     queryKey: orderKey,
     queryFn: async () => (await sellerOrderById(id)).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   return (

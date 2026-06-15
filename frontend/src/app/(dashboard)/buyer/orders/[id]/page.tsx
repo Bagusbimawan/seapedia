@@ -10,6 +10,8 @@ import { OrderStatusBadge } from '@/components/ui/Badge'
 import { LoadingSkeleton, SummaryRow } from '@/components/ui/ListHelpers'
 import { buyerOrderById } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { BUYER_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
@@ -18,11 +20,14 @@ interface Props { params: Promise<{ id: string }> }
 
 export default function BuyerOrderDetailPage({ params }: Props) {
   const { id } = use(params)
+  const { isReady } = useAuth()
   const orderKey = useScopedQueryKey('buyer-order', id)
 
   const { data: order, isLoading } = useQuery({
     queryKey: orderKey,
     queryFn: async () => (await buyerOrderById(id)).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   return (
