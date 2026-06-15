@@ -31,21 +31,19 @@ function toLineItem(item: CartItem): CartLineItem {
 }
 
 export function useBuyerCart() {
+  const hasHydrated = useAuthStore((s) => s.hasHydrated)
   const authReady = useAuthStore((s) => s.hasHydrated && !!s.token)
+  const userId = useAuthStore((s) => s.user?.id)
   const cart = useCartStore((s) => s.cart)
   const isLoading = useCartStore((s) => s.isLoading)
   const isError = useCartStore((s) => s.isError)
   const fetchCart = useCartStore((s) => s.fetchCart)
   const setCart = useCartStore((s) => s.setCart)
-  const resetCart = useCartStore((s) => s.reset)
 
   useEffect(() => {
-    if (authReady) {
-      void fetchCart()
-    } else {
-      resetCart()
-    }
-  }, [authReady, fetchCart, resetCart])
+    if (!authReady || !userId) return
+    void fetchCart()
+  }, [authReady, userId, fetchCart])
 
   const lineItems: CartLineItem[] = useMemo(() => {
     if (!cart?.items?.length) return []
@@ -58,7 +56,8 @@ export function useBuyerCart() {
   )
 
   const hasItems = lineItems.length > 0
-  const showLoading = authReady && isLoading && !cart
+  const waitingAuth = !hasHydrated || (hasHydrated && !authReady)
+  const showLoading = waitingAuth || (authReady && isLoading && !cart)
 
   return {
     cart: cart ?? undefined,
@@ -68,7 +67,7 @@ export function useBuyerCart() {
     isFetching: isLoading,
     isEmpty: authReady && !showLoading && !isError && !hasItems,
     isReady: hasItems,
-    isError,
+    isError: authReady && isError && !hasItems,
     clearCartCache: () => setCart({ id: '', user_id: '', items: [] }),
     refreshCart: fetchCart,
     syncCart: (next: Parameters<typeof setCart>[0]) => setCart(next ?? null),

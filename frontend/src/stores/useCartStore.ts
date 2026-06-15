@@ -13,7 +13,7 @@ interface CartState {
   reset: () => void
 }
 
-export const useCartStore = create<CartState>((set) => ({
+export const useCartStore = create<CartState>((set, get) => ({
   cart: null,
   isLoading: false,
   isError: false,
@@ -22,13 +22,19 @@ export const useCartStore = create<CartState>((set) => ({
     set({ isLoading: true, isError: false })
     try {
       const res = await getCart()
-      set({ cart: res.data.data ?? null, isLoading: false })
+      set({ cart: res.data.data ?? null, isLoading: false, isError: false })
     } catch {
-      set({ cart: null, isLoading: false, isError: true })
+      const existing = get().cart
+      const hasItems = (existing?.items?.length ?? 0) > 0
+      set({
+        isLoading: false,
+        isError: !hasItems,
+        // Jangan hapus cart yang sudah di-set dari addItem jika refetch gagal
+      })
     }
   },
 
-  setCart: (cart) => set({ cart, isError: false }),
+  setCart: (cart) => set({ cart, isError: false, isLoading: false }),
 
   reset: () => set({ cart: null, isLoading: false, isError: false }),
 }))

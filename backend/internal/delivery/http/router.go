@@ -33,9 +33,12 @@ func NewRouter(app *fiber.App, cfg *config.Config, h *Handlers) {
 	app.Use(recover.New())
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: cfg.CORSOrigins,
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
-		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
+		AllowOrigins:     cfg.CORSOrigins,
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Requested-With",
+		AllowMethods:     "GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD",
+		AllowCredentials: false,
+		ExposeHeaders:    "Content-Length, Content-Type",
+		MaxAge:           86400,
 	}))
 
 	api := app.Group("/api/v1")
