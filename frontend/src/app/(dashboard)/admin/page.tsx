@@ -7,17 +7,20 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import StatCard from '@/components/ui/StatCard'
 import Button from '@/components/ui/Button'
 import { listUsers, listStores, listOrders } from '@/lib/api/admin'
+import { useAuth } from '@/hooks/useAuth'
 import { useScopedQueryKey } from '@/lib/queryKeys'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { ADMIN_NAV } from '@/lib/nav'
 
 export default function AdminDashboardPage() {
+  const { isReady } = useAuth()
   const usersKey = useScopedQueryKey('admin-users')
   const storesKey = useScopedQueryKey('admin-stores')
   const ordersKey = useScopedQueryKey('admin-orders')
 
-  const { data: users } = useQuery({ queryKey: usersKey, queryFn: async () => (await listUsers({ limit: 1 })).data.data })
-  const { data: stores } = useQuery({ queryKey: storesKey, queryFn: async () => (await listStores({ limit: 1 })).data.data })
-  const { data: orders } = useQuery({ queryKey: ordersKey, queryFn: async () => (await listOrders({ limit: 1 })).data.data })
+  const { data: users } = useQuery({ queryKey: usersKey, queryFn: async () => (await listUsers({ limit: 1 })).data.data, enabled: isReady, ...cachedQueryOptions })
+  const { data: stores } = useQuery({ queryKey: storesKey, queryFn: async () => (await listStores({ limit: 1 })).data.data, enabled: isReady, ...cachedQueryOptions })
+  const { data: orders } = useQuery({ queryKey: ordersKey, queryFn: async () => (await listOrders({ limit: 1 })).data.data, enabled: isReady, ...cachedQueryOptions })
 
   return (
     <DashboardLayout title="Dashboard Admin" subtitle="Monitoring platform" navItems={ADMIN_NAV} role="ADMIN">

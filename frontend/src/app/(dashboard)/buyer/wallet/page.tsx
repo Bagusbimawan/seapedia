@@ -8,6 +8,7 @@ import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import QuantityStepper from '@/components/ui/QuantityStepper'
 import { getBalance, topup, getTransactions } from '@/lib/api/wallet'
+import { useAuth } from '@/hooks/useAuth'
 import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { formatRupiah, formatDate } from '@/lib/format'
@@ -23,6 +24,7 @@ const TX_TYPE_LABEL: Record<string, string> = {
 
 export default function BuyerWalletPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const walletKey = useScopedQueryKey('buyer-wallet')
   const txsKey = useScopedQueryKey('buyer-wallet-txs')
   const [amount, setAmount] = useState(100000)
@@ -32,12 +34,14 @@ export default function BuyerWalletPage() {
   const { data: wallet, isLoading } = useQuery({
     queryKey: walletKey,
     queryFn: async () => (await getBalance()).data.data,
+    enabled: isReady,
     ...cachedQueryOptions,
   })
 
   const { data: txs } = useQuery({
     queryKey: txsKey,
     queryFn: async () => (await getTransactions({ limit: 50 })).data.data,
+    enabled: isReady,
     ...cachedQueryOptions,
   })
 

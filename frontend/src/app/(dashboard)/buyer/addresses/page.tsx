@@ -12,6 +12,7 @@ import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { listAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress } from '@/lib/api/addresses'
+import { useAuth } from '@/hooks/useAuth'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import type { Address } from '@/types'
 import { BUYER_NAV } from '@/lib/nav'
@@ -20,6 +21,7 @@ const emptyForm = { label: '', street: '', city: '', zip_code: '', is_default: f
 
 export default function BuyerAddressesPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Address | null>(null)
   const [form, setForm] = useState(emptyForm)
@@ -30,6 +32,7 @@ export default function BuyerAddressesPage() {
   const { data: addresses, isLoading } = useQuery({
     queryKey: addressesKey,
     queryFn: async () => (await listAddresses()).data.data ?? [],
+    enabled: isReady,
   })
 
   const openCreate = () => {

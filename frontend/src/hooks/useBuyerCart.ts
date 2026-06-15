@@ -36,6 +36,7 @@ function toLineItem(item: CartItem): CartLineItem {
 
 export function useBuyerCart() {
   const queryClient = useQueryClient()
+  const hasHydrated = useAuthStore((s) => s.hasHydrated)
   const authReady = useAuthStore((s) => s.hasHydrated && !!s.token)
   const cartKey = useScopedQueryKey('buyer-cart')
 
@@ -69,7 +70,8 @@ export function useBuyerCart() {
   }
 
   const hasItems = (cartQuery.data?.items?.length ?? 0) > 0
-  const isInitialLoading = cartQuery.isPending && cartQuery.data === undefined
+  // cartQuery.isLoading = isPending && isFetching, which is false for disabled queries
+  const isInitialLoading = !hasHydrated || cartQuery.isLoading
 
   return {
     cart: cartQuery.data,

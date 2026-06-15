@@ -47,7 +47,7 @@ export default function BuyerDashboardPage() {
   })
 
   const orderItems = orders?.items ?? []
-  const showOrdersLoading = ordersLoading && orderItems.length === 0
+  const showOrdersLoading = !isReady || (ordersLoading && orderItems.length === 0)
 
   return (
     <DashboardLayout

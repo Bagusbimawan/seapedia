@@ -6,16 +6,21 @@ import Card from '@/components/ui/Card'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { listOrders } from '@/lib/api/admin'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { ADMIN_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
 
 export default function AdminOrdersPage() {
+  const { isReady } = useAuth()
   const ordersKey = useScopedQueryKey('admin-orders-list')
 
   const { data, isLoading } = useQuery({
     queryKey: ordersKey,
     queryFn: async () => (await listOrders({ limit: 50 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   return (

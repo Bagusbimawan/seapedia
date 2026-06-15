@@ -7,15 +7,20 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import StatCard from '@/components/ui/StatCard'
 import Button from '@/components/ui/Button'
 import { listAvailableJobs } from '@/lib/api/delivery'
+import { useAuth } from '@/hooks/useAuth'
 import { useScopedQueryKey } from '@/lib/queryKeys'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverDashboardPage() {
+  const { isReady } = useAuth()
   const jobsKey = useScopedQueryKey('driver-jobs-count')
 
   const { data: jobs } = useQuery({
     queryKey: jobsKey,
     queryFn: async () => (await listAvailableJobs({ limit: 1 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   return (

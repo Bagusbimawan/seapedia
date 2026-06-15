@@ -10,34 +10,45 @@ import EmptyState from '@/components/ui/EmptyState'
 import { sellerGetStore } from '@/lib/api/stores'
 import { sellerListProducts } from '@/lib/api/products'
 import { sellerOrders } from '@/lib/api/orders'
+import { useAuth } from '@/hooks/useAuth'
 import { useScopedQueryKey } from '@/lib/queryKeys'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { SELLER_NAV } from '@/lib/nav'
 
 export default function SellerDashboardPage() {
+  const { isReady } = useAuth()
   const storeKey = useScopedQueryKey('seller-store')
   const productsCountKey = useScopedQueryKey('seller-products-count')
   const ordersCountKey = useScopedQueryKey('seller-orders-count')
 
-  const { data: store } = useQuery({
+  const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: storeKey,
     queryFn: async () => {
       try { return (await sellerGetStore()).data.data } catch { return null }
     },
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
   const { data: products } = useQuery({
     queryKey: productsCountKey,
     queryFn: async () => (await sellerListProducts({ limit: 1 })).data.data,
     enabled: !!store,
+    ...cachedQueryOptions,
   })
   const { data: orders } = useQuery({
     queryKey: ordersCountKey,
     queryFn: async () => (await sellerOrders({ limit: 1 })).data.data,
     enabled: !!store,
+    ...cachedQueryOptions,
   })
+
+  const isLoading = !isReady || storeLoading
 
   return (
     <DashboardLayout title="Dashboard Seller" subtitle="Kelola toko dan pesanan" navItems={SELLER_NAV} role="SELLER">
-      {!store ? (
+      {isLoading ? (
+        <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+      ) : !store ? (
         <EmptyState
           icon={Store}
           title="Belum ada toko"

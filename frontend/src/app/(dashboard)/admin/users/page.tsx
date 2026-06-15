@@ -5,15 +5,20 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import { RoleBadge } from '@/components/ui/Badge'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { listUsers } from '@/lib/api/admin'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { ADMIN_NAV } from '@/lib/nav'
 
 export default function AdminUsersPage() {
+  const { isReady } = useAuth()
   const usersKey = useScopedQueryKey('admin-users-list')
 
   const { data, isLoading } = useQuery({
     queryKey: usersKey,
     queryFn: async () => (await listUsers({ limit: 50 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   return (

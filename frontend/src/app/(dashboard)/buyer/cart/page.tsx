@@ -20,7 +20,7 @@ import { BUYER_NAV } from '@/lib/nav'
 export default function BuyerCartPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { lineItems, subtotal, isLoading, isEmpty, isReady, isError } = useBuyerCart()
+  const { lineItems, subtotal, isLoading, isEmpty, isReady, isError, clearCartCache } = useBuyerCart()
 
   const refresh = () => refreshBuyerCartCache(queryClient)
 
@@ -37,7 +37,7 @@ export default function BuyerCartPage() {
   const handleClear = async () => {
     if (!confirm('Kosongkan keranjang?')) return
     await clearCart()
-    await refresh()
+    clearCartCache()
   }
 
   return (

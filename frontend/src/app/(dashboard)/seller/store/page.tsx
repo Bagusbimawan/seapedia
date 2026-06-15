@@ -7,11 +7,14 @@ import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { sellerGetStore, sellerCreateStore, sellerUpdateStore } from '@/lib/api/stores'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
 
 export default function SellerStorePage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,6 +29,8 @@ export default function SellerStorePage() {
         return res.data.data
       } catch { return null }
     },
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   useEffect(() => {

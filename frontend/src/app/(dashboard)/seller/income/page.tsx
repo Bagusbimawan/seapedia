@@ -6,15 +6,20 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import { sellerIncome } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
 
 export default function SellerIncomePage() {
+  const { isReady } = useAuth()
   const incomeKey = useScopedQueryKey('seller-income')
 
   const { data, isLoading } = useQuery({
     queryKey: incomeKey,
     queryFn: async () => (await sellerIncome({ limit: 50 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   return (

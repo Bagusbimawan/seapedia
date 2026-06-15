@@ -10,11 +10,14 @@ import Badge from '@/components/ui/Badge'
 import { jobHistory, completeJob } from '@/lib/api/delivery'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverHistoryPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const historyKey = useScopedQueryKey('driver-history')
@@ -22,6 +25,8 @@ export default function DriverHistoryPage() {
   const { data, isLoading } = useQuery({
     queryKey: historyKey,
     queryFn: async () => (await jobHistory({ limit: 50 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   const handleComplete = async (id: string) => {

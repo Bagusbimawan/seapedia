@@ -11,6 +11,8 @@ import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { sellerListProducts, sellerCreateProduct, sellerUpdateProduct, sellerDeleteProduct } from '@/lib/api/products'
 import { formatRupiah } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
 import type { Product } from '@/types'
@@ -22,6 +24,7 @@ const emptyForm = { name: '', description: '', price: 0, stock: 0 }
 
 export default function SellerProductsPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState(emptyForm)
@@ -32,6 +35,8 @@ export default function SellerProductsPage() {
   const { data, isLoading } = useQuery({
     queryKey: productsKey,
     queryFn: async () => (await sellerListProducts({ limit: 50 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setModalOpen(true) }

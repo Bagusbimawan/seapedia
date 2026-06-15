@@ -12,6 +12,7 @@ import { OrderStatusBadge } from '@/components/ui/Badge'
 import { sellerOrders, markReady } from '@/lib/api/orders'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
 import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
@@ -19,6 +20,7 @@ import type { Order, OrderStatus, PaginatedData } from '@/types'
 
 export default function SellerOrdersPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const [page] = useState(1)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -28,6 +30,7 @@ export default function SellerOrdersPage() {
   const { data, isLoading } = useQuery({
     queryKey: ordersKey,
     queryFn: async () => (await sellerOrders({ page, limit: 10 })).data.data,
+    enabled: isReady,
     ...cachedQueryOptions,
   })
 

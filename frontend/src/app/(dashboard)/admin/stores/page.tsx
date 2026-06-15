@@ -9,6 +9,8 @@ import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
 import { listStores, adminCreateSeller } from '@/lib/api/admin'
 import { formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { ADMIN_NAV } from '@/lib/nav'
 import type { Store } from '@/types'
@@ -21,6 +23,7 @@ function provisionLabel(by?: string) {
 
 export default function AdminStoresPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const storesKey = useScopedQueryKey('admin-stores-list')
 
   const [username, setUsername] = useState('')
@@ -35,6 +38,8 @@ export default function AdminStoresPage() {
   const { data, isLoading } = useQuery({
     queryKey: storesKey,
     queryFn: async () => (await listStores({ limit: 50 })).data.data,
+    enabled: isReady,
+    ...cachedQueryOptions,
   })
 
   const { adminStores, otherStores } = useMemo(() => {

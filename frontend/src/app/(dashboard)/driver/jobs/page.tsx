@@ -11,12 +11,14 @@ import { LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { listAvailableJobs, takeJob } from '@/lib/api/delivery'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { useAuth } from '@/hooks/useAuth'
 import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverJobsPage() {
   const queryClient = useQueryClient()
+  const { isReady } = useAuth()
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,6 +27,7 @@ export default function DriverJobsPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: availableJobsKey,
     queryFn: async () => (await listAvailableJobs({ limit: 20 })).data.data,
+    enabled: isReady,
     ...cachedQueryOptions,
   })
 
