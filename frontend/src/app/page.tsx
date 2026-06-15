@@ -2,27 +2,10 @@ import Link from 'next/link'
 import { ShoppingBag, Truck, Shield, ArrowRight, Star, Users } from 'lucide-react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import ProductCard from '@/components/ui/ProductCard'
+import FeaturedProducts from '@/components/home/FeaturedProducts'
 import { DEMO_ACCOUNTS, DEMO_VOUCHER } from '@/lib/demoAccounts'
-import type { ApiResponse, PaginatedData, Product } from '@/types'
 
-async function getFeaturedProducts(): Promise<Product[]> {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1'}/products?limit=8`,
-      { next: { revalidate: 60 } }
-    )
-    if (!res.ok) return []
-    const json: ApiResponse<PaginatedData<Product>> = await res.json()
-    return json.data?.items ?? []
-  } catch {
-    return []
-  }
-}
-
-export default async function HomePage() {
-  const products = await getFeaturedProducts()
-
+export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
@@ -54,7 +37,6 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Stats */}
           <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-6">
             {[
               { value: '3+', label: 'Peran' },
@@ -95,32 +77,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Products */}
-      <section className="bg-slate-50 py-16">
-        <div className="container-page">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Produk Unggulan</h2>
-              <p className="mt-1 text-sm text-slate-500">Pilihan terbaik minggu ini</p>
-            </div>
-            <Link href="/products" className="flex items-center gap-1 text-sm font-semibold text-ocean-600 hover:text-ocean-700">
-              Lihat semua <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          {products.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-slate-200 py-20 text-center text-slate-400">
-              <p>Belum ada produk tersedia. Jalankan backend & seed terlebih dahulu.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <FeaturedProducts />
 
       {/* Roles CTA */}
       <section className="bg-white py-16">
@@ -146,7 +103,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Demo accounts for panitia */}
       <section className="border-t border-amber-100 bg-amber-50/50 py-12">
         <div className="container-page">
           <h2 className="text-xl font-bold text-slate-900">Akun Demo untuk Panitia</h2>
@@ -180,12 +136,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Reviews teaser */}
       <section className="border-t border-slate-100 bg-slate-50 py-12">
         <div className="container-page flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex">
-              {[1,2,3,4,5].map((i) => <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />)}
+              {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />)}
             </div>
             <p className="text-sm text-slate-600">Lihat ulasan dari komunitas Seapedia</p>
           </div>
