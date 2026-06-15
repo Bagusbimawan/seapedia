@@ -72,22 +72,45 @@ func (r *storeRepository) ListAll(ctx context.Context, page, limit int) ([]*stor
 	return stores, total, nil
 }
 
+func (r *storeRepository) ListByProvisionedBy(ctx context.Context, provisionedBy string, page, limit int) ([]*store.Store, int64, error) {
+	var total int64
+	var models []StoreModel
+	offset := (page - 1) * limit
+
+	q := r.db.WithContext(ctx).Model(&StoreModel{}).Where("provisioned_by = ?", provisionedBy)
+	q.Count(&total)
+	if err := q.Offset(offset).Limit(limit).Find(&models).Error; err != nil {
+		return nil, 0, err
+	}
+
+	stores := make([]*store.Store, 0, len(models))
+	for _, m := range models {
+		mc := m
+		stores = append(stores, modelToStore(&mc))
+	}
+	return stores, total, nil
+}
+
 func storeToModel(s *store.Store) *StoreModel {
 	return &StoreModel{
-		ID:           s.ID,
-		SellerUserID: s.SellerUserID,
-		Name:         s.Name,
-		Description:  s.Description,
+		ID:            s.ID,
+		SellerUserID:  s.SellerUserID,
+		Name:          s.Name,
+		Description:   s.Description,
+		ProvisionedBy: s.ProvisionedBy,
+		DemoPassword:  s.DemoPassword,
 	}
 }
 
 func modelToStore(m *StoreModel) *store.Store {
 	return &store.Store{
-		ID:           m.ID,
-		SellerUserID: m.SellerUserID,
-		Name:         m.Name,
-		Description:  m.Description,
-		CreatedAt:    m.CreatedAt,
-		UpdatedAt:    m.UpdatedAt,
+		ID:            m.ID,
+		SellerUserID:  m.SellerUserID,
+		Name:          m.Name,
+		Description:   m.Description,
+		ProvisionedBy: m.ProvisionedBy,
+		DemoPassword:  m.DemoPassword,
+		CreatedAt:     m.CreatedAt,
+		UpdatedAt:     m.UpdatedAt,
 	}
 }

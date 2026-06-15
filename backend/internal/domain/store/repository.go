@@ -9,4 +9,5 @@ type Repository interface {
 	FindBySellerID(ctx context.Context, sellerID string) (*Store, error)
 	Update(ctx context.Context, s *Store) error
 	ListAll(ctx context.Context, page, limit int) ([]*Store, int64, error)
+	ListByProvisionedBy(ctx context.Context, provisionedBy string, page, limit int) ([]*Store, int64, error)
 }

@@ -104,6 +104,7 @@ func NewRouter(app *fiber.App, cfg *config.Config, h *Handlers) {
 	admin.Get("/users", h.Admin.ListUsers)
 	admin.Get("/stores", h.Admin.ListStores)
 	admin.Post("/stores", h.Admin.CreateStore)
+	admin.Post("/sellers", h.Admin.CreateSeller)
 	admin.Get("/orders", h.Admin.ListOrders)
 	admin.Post("/vouchers", h.Discount.CreateVoucher)
 	admin.Post("/promos", h.Discount.CreatePromo)

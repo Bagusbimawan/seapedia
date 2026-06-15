@@ -5,6 +5,7 @@ export interface DemoSeller {
   email: string
   username: string
   store_name: string
+  demo_password?: string
 }
 
 export const getDemoSellers = () =>

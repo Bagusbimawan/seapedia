@@ -95,17 +95,33 @@ func ToStoreResponse(s *store.Store) StoreResponse {
 }
 
 type DemoSellerResponse struct {
-	Email     string `json:"email"`
-	Username  string `json:"username"`
-	StoreName string `json:"store_name"`
+	Email        string `json:"email"`
+	Username     string `json:"username"`
+	StoreName    string `json:"store_name"`
+	DemoPassword string `json:"demo_password,omitempty"`
 }
 
-func ToDemoSellerResponse(email, username, storeName string) DemoSellerResponse {
+func ToDemoSellerResponse(email, username, storeName, demoPassword string) DemoSellerResponse {
 	return DemoSellerResponse{
-		Email:     email,
-		Username:  username,
-		StoreName: storeName,
+		Email:        email,
+		Username:     username,
+		StoreName:    storeName,
+		DemoPassword: demoPassword,
 	}
+}
+
+type AdminCreateSellerReq struct {
+	Username    string `json:"username" validate:"required,min=3,max=100"`
+	Email       string `json:"email" validate:"required,email"`
+	Password    string `json:"password" validate:"required,min=6"`
+	StoreName   string `json:"store_name" validate:"required,min=2,max=200"`
+	Description string `json:"description" validate:"omitempty,max=2000"`
+}
+
+type AdminCreateSellerResponse struct {
+	User         UserResponse  `json:"user"`
+	Store        StoreResponse `json:"store"`
+	DemoPassword string        `json:"demo_password"`
 }
 
 // ── Product ───────────────────────────────────────────────────────────────────

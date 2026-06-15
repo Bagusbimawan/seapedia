@@ -30,3 +30,20 @@ export interface AdminCreateStoreRequest {
 
 export const adminCreateStore = (data: AdminCreateStoreRequest) =>
   client.post<ApiResponse<Store>>('/admin/stores', data)
+
+export interface AdminCreateSellerRequest {
+  username: string
+  email: string
+  password: string
+  store_name: string
+  description?: string
+}
+
+export interface AdminCreateSellerResponse {
+  user: User
+  store: Store
+  demo_password: string
+}
+
+export const adminCreateSeller = (data: AdminCreateSellerRequest) =>
+  client.post<ApiResponse<AdminCreateSellerResponse>>('/admin/sellers', data)

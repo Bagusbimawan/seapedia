@@ -73,9 +73,9 @@ docker compose up --build
 | `buyer@seapedia.com` | `buyer123` | BUYER | Saldo Rp 500.000 |
 | `driver@seapedia.com` | `driver123` | DRIVER | — |
 
-**Voucher demo:** `DISC20` (diskon 20%)
+**Seller di panel login:** hanya muncul setelah dibuat oleh Admin (menu Toko → Buat Seller Baru). Seed `seller@` tetap ada untuk testing API, tidak ditampilkan di panel login.
 
-Setiap peran punya akun terpisah (Admin, Seller, Buyer, Driver). Register multi-role masih didukung lewat `/register`, tapi demo memakai akun single-role.
+**Voucher demo:** `DISC20` (diskon 20%)
 
 ### Cara membuat Admin
 

@@ -4,7 +4,7 @@ import { Copy, Check } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getDemoSellers } from '@/lib/api/demo'
-import { DEMO_ACCOUNTS, DEMO_VOUCHER, KNOWN_DEMO_PASSWORDS } from '@/lib/demoAccounts'
+import { DEMO_ACCOUNTS, DEMO_VOUCHER } from '@/lib/demoAccounts'
 
 interface DemoRow {
   role: string
@@ -24,11 +24,11 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
   const { data: sellersRes } = useQuery({
     queryKey: ['demo-sellers'],
     queryFn: async () => (await getDemoSellers()).data.data ?? [],
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
   })
 
   const rows = useMemo<DemoRow[]>(() => {
-    const staticEmails = new Set(DEMO_ACCOUNTS.map((a) => a.email))
     const result: DemoRow[] = DEMO_ACCOUNTS.map((acc) => ({
       role: acc.role,
       email: acc.email,
@@ -38,14 +38,12 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
     }))
 
     for (const seller of sellersRes ?? []) {
-      if (staticEmails.has(seller.email)) continue
-      const password = KNOWN_DEMO_PASSWORDS[seller.email]
       result.push({
         role: 'Seller',
         email: seller.email,
-        password: password ?? '—',
+        password: seller.demo_password ?? '',
         note: seller.store_name,
-        canLogin: !!password,
+        canLogin: !!seller.demo_password,
       })
     }
 
@@ -59,10 +57,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
   }
 
   const handleRowClick = (row: DemoRow) => {
-    if (!row.canLogin) {
-      onSelect?.(row.email, '')
-      return
-    }
+    if (!row.canLogin) return
     onSelect?.(row.email, row.password)
   }
 
@@ -70,7 +65,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
     <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
       <p className="mb-1 text-sm font-semibold text-amber-900">Akun Demo untuk Panitia</p>
       <p className="mb-3 text-xs text-amber-700">
-        Klik baris untuk mengisi form login. Seller diambil otomatis dari toko yang ada (termasuk yang dibuat admin).
+        Seller hanya muncul setelah dibuat oleh Admin di menu Toko. Klik baris untuk mengisi form login.
       </p>
 
       <div className="overflow-hidden rounded-xl border border-amber-200 bg-white">
@@ -85,7 +80,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
           <tbody>
             {rows.map((acc) => (
               <tr
-                key={acc.email}
+                key={`${acc.role}-${acc.email}`}
                 className="cursor-pointer border-t border-amber-100 transition-colors hover:bg-amber-50"
                 onClick={() => handleRowClick(acc)}
               >
@@ -96,9 +91,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
                 <td className="px-3 py-2 text-slate-600">{acc.email}</td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1">
-                    <span className="font-mono text-slate-700">
-                      {acc.canLogin ? acc.password : 'password registrasi'}
-                    </span>
+                    <span className="font-mono text-slate-700">{acc.password}</span>
                     {acc.canLogin && (
                       <button
                         type="button"
@@ -113,6 +106,13 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
                 </td>
               </tr>
             ))}
+            {!rows.some((r) => r.role === 'Seller') && (
+              <tr className="border-t border-amber-100">
+                <td colSpan={3} className="px-3 py-3 text-center text-[11px] text-slate-400">
+                  Belum ada seller — buat dari Admin → Toko
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

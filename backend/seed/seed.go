@@ -53,10 +53,11 @@ func main() {
 			roles: []user.Role{user.RoleSeller},
 			extra: func(userID string) {
 				s := &store.Store{
-					ID:           uuid.New().String(),
-					SellerUserID: userID,
-					Name:         "Toko Contoh",
-					Description:  "Toko contoh untuk demo SEAPEDIA",
+					ID:            uuid.New().String(),
+					SellerUserID:  userID,
+					Name:          "Toko Contoh",
+					Description:   "Toko contoh untuk demo SEAPEDIA",
+					ProvisionedBy: store.ProvisionedSeed,
 				}
 				if err := storeRepo.Create(ctx, s); err != nil {
 					log.Printf("store seed: %v", err)

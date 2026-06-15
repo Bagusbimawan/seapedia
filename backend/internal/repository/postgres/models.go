@@ -80,12 +80,14 @@ func (AddressModel) TableName() string { return "addresses" }
 
 // StoreModel maps to the stores table.
 type StoreModel struct {
-	ID           string    `gorm:"type:uuid;primaryKey"`
-	SellerUserID string    `gorm:"type:uuid;uniqueIndex;not null"`
-	Name         string    `gorm:"uniqueIndex;not null;size:200"`
-	Description  string    `gorm:"type:text"`
-	CreatedAt    time.Time `gorm:"autoCreateTime"`
-	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
+	ID            string    `gorm:"type:uuid;primaryKey"`
+	SellerUserID  string    `gorm:"type:uuid;uniqueIndex;not null"`
+	Name          string    `gorm:"uniqueIndex;not null;size:200"`
+	Description   string    `gorm:"type:text"`
+	ProvisionedBy string    `gorm:"size:20;not null;default:seller"`
+	DemoPassword  string    `gorm:"size:100"`
+	CreatedAt     time.Time `gorm:"autoCreateTime"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime"`
 }
 
 func (StoreModel) TableName() string { return "stores" }

@@ -339,6 +339,31 @@ func (h *AdminHandler) CreateStore(c *fiber.Ctx) error {
 	return response.Created(c, dto.ToStoreResponse(s))
 }
 
+// CreateSeller godoc
+// @Summary Create seller user and store (admin)
+// @Tags admin
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param body body dto.AdminCreateSellerReq true "Seller data"
+// @Success 201 {object} response.R{data=dto.AdminCreateSellerResponse}
+// @Router /admin/sellers [post]
+func (h *AdminHandler) CreateSeller(c *fiber.Ctx) error {
+	var req dto.AdminCreateSellerReq
+	if err := ParseBody(c, &req); err != nil {
+		return err
+	}
+	result, err := h.uc.CreateSeller(c.Context(), req.Username, req.Email, req.Password, req.StoreName, req.Description)
+	if err != nil {
+		return HandleErr(c, err)
+	}
+	return response.Created(c, dto.AdminCreateSellerResponse{
+		User:         dto.ToUserResponse(result.User),
+		Store:        dto.ToStoreResponse(result.Store),
+		DemoPassword: result.DemoPassword,
+	})
+}
+
 // ListOrders godoc
 // @Summary List all orders
 // @Tags admin

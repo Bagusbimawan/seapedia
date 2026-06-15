@@ -37,8 +37,10 @@ swagger: swag
 
 migrate-up:
 	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/001_initial.up.sql
+	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/002_store_provision.up.sql
 
 migrate-down:
+	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/002_store_provision.down.sql
 	psql "$(DB_URL)" -f $(MIGRATIONS_DIR)/001_initial.down.sql
 
 seed:

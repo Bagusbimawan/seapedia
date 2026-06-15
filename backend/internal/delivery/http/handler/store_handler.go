@@ -46,7 +46,7 @@ func (h *StoreHandler) ListDemoSellers(c *fiber.Ctx) error {
 	}
 	items := make([]dto.DemoSellerResponse, 0, len(sellers))
 	for _, s := range sellers {
-		items = append(items, dto.ToDemoSellerResponse(s.Email, s.Username, s.StoreName))
+		items = append(items, dto.ToDemoSellerResponse(s.Email, s.Username, s.StoreName, s.DemoPassword))
 	}
 	return response.OK(c, items)
 }

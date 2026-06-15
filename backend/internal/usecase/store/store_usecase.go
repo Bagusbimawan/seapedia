@@ -11,9 +11,10 @@ import (
 
 // DemoSeller is public seller info for the login demo panel.
 type DemoSeller struct {
-	Email     string
-	Username  string
-	StoreName string
+	Email        string
+	Username     string
+	StoreName    string
+	DemoPassword string
 }
 
 // Usecase handles store business logic.
@@ -36,10 +37,11 @@ func (u *Usecase) CreateStore(ctx context.Context, sellerID, name, description s
 	}
 
 	s := &store.Store{
-		ID:           uuid.New().String(),
-		SellerUserID: sellerID,
-		Name:         name,
-		Description:  description,
+		ID:            uuid.New().String(),
+		SellerUserID:  sellerID,
+		Name:          name,
+		Description:   description,
+		ProvisionedBy: store.ProvisionedSeller,
 	}
 	if err := u.storeRepo.Create(ctx, s); err != nil {
 		return nil, err
@@ -76,9 +78,9 @@ func (u *Usecase) ListAll(ctx context.Context, page, limit int) ([]*store.Store,
 	return u.storeRepo.ListAll(ctx, page, limit)
 }
 
-// ListDemoSellers returns sellers with stores for the public demo panel.
+// ListDemoSellers returns admin-provisioned sellers for the public demo panel.
 func (u *Usecase) ListDemoSellers(ctx context.Context) ([]DemoSeller, error) {
-	stores, _, err := u.storeRepo.ListAll(ctx, 1, 100)
+	stores, _, err := u.storeRepo.ListByProvisionedBy(ctx, store.ProvisionedAdmin, 1, 100)
 	if err != nil {
 		return nil, err
 	}
@@ -90,9 +92,10 @@ func (u *Usecase) ListDemoSellers(ctx context.Context) ([]DemoSeller, error) {
 			continue
 		}
 		items = append(items, DemoSeller{
-			Email:     seller.Email,
-			Username:  seller.Username,
-			StoreName: s.Name,
+			Email:        seller.Email,
+			Username:     seller.Username,
+			StoreName:    s.Name,
+			DemoPassword: s.DemoPassword,
 		})
 	}
 	return items, nil

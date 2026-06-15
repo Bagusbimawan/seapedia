@@ -2,12 +2,14 @@ package admin
 
 import (
 	"context"
+	"strings"
 
 	"github.com/bagus/seapedia/internal/domain/order"
 	"github.com/bagus/seapedia/internal/domain/store"
 	"github.com/bagus/seapedia/internal/domain/user"
 	"github.com/bagus/seapedia/internal/pkg/apperror"
 	"github.com/bagus/seapedia/internal/pkg/clock"
+	"github.com/bagus/seapedia/internal/pkg/hash"
 	"github.com/bagus/seapedia/internal/repository/postgres"
 	"github.com/google/uuid"
 )
@@ -78,15 +80,80 @@ func (u *Usecase) CreateStore(ctx context.Context, sellerUserID, name, descripti
 	}
 
 	s := &store.Store{
-		ID:           uuid.New().String(),
-		SellerUserID: sellerUserID,
-		Name:         name,
-		Description:  description,
+		ID:            uuid.New().String(),
+		SellerUserID:  sellerUserID,
+		Name:          name,
+		Description:   description,
+		ProvisionedBy: store.ProvisionedAdmin,
 	}
 	if err := u.storeRepo.Create(ctx, s); err != nil {
 		return nil, err
 	}
 	return s, nil
+}
+
+// CreateSellerResult is returned after admin creates a seller account + store.
+type CreateSellerResult struct {
+	User         *user.User
+	Store        *store.Store
+	DemoPassword string
+}
+
+// CreateSeller creates a seller user and store (shown on login demo panel).
+func (u *Usecase) CreateSeller(ctx context.Context, username, email, password, storeName, storeDesc string) (*CreateSellerResult, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
+	username = strings.TrimSpace(username)
+	storeName = strings.TrimSpace(storeName)
+
+	if len(password) < 6 {
+		return nil, apperror.BadRequest("password minimal 6 karakter")
+	}
+
+	if _, err := u.userRepo.FindByEmail(ctx, email); err == nil {
+		return nil, apperror.Conflict("email already registered")
+	} else if !isNotFound(err) {
+		return nil, err
+	}
+
+	if _, err := u.userRepo.FindByUsername(ctx, username); err == nil {
+		return nil, apperror.Conflict("username already taken")
+	} else if !isNotFound(err) {
+		return nil, err
+	}
+
+	passwordHash, err := hash.Hash(password)
+	if err != nil {
+		return nil, apperror.Internal("failed to hash password")
+	}
+
+	newUser := &user.User{
+		ID:           uuid.New().String(),
+		Username:     username,
+		Email:        email,
+		PasswordHash: passwordHash,
+		Roles:        []user.Role{user.RoleSeller},
+	}
+	if err := u.userRepo.Create(ctx, newUser); err != nil {
+		return nil, err
+	}
+
+	s := &store.Store{
+		ID:            uuid.New().String(),
+		SellerUserID:  newUser.ID,
+		Name:          storeName,
+		Description:   strings.TrimSpace(storeDesc),
+		ProvisionedBy: store.ProvisionedAdmin,
+		DemoPassword:  password,
+	}
+	if err := u.storeRepo.Create(ctx, s); err != nil {
+		return nil, err
+	}
+
+	return &CreateSellerResult{
+		User:         newUser,
+		Store:        s,
+		DemoPassword: password,
+	}, nil
 }
 
 func isNotFound(err error) bool {
