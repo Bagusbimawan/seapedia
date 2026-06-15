@@ -73,7 +73,7 @@ docker compose up --build
 | `buyer@seapedia.com` | `buyer123` | BUYER | Saldo Rp 500.000 |
 | `driver@seapedia.com` | `driver123` | DRIVER | — |
 
-**Seller di panel login:** hanya muncul setelah dibuat oleh Admin (menu Toko → Buat Seller Baru). Seed `seller@` tetap ada untuk testing API, tidak ditampilkan di panel login.
+**Seller di panel login:** `seller@seapedia.com` (seed) + seller baru yang dibuat Admin di menu Toko.
 
 **Voucher demo:** `DISC20` (diskon 20%)
 

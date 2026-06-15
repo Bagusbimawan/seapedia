@@ -14,8 +14,8 @@ import { ADMIN_NAV } from '@/lib/nav'
 import type { Store } from '@/types'
 
 function provisionLabel(by?: string) {
-  if (by === 'admin') return { label: 'Panel Login', variant: 'info' as const }
-  if (by === 'seed') return { label: 'Seed (testing)', variant: 'default' as const }
+  if (by === 'admin') return { label: 'Admin', variant: 'info' as const }
+  if (by === 'seed') return { label: 'Seed', variant: 'success' as const }
   return { label: 'Seller', variant: 'default' as const }
 }
 
@@ -40,8 +40,8 @@ export default function AdminStoresPage() {
   const { adminStores, otherStores } = useMemo(() => {
     const items = data?.items ?? []
     return {
-      adminStores: items.filter((s) => s.provisioned_by === 'admin'),
-      otherStores: items.filter((s) => s.provisioned_by !== 'admin'),
+      adminStores: items.filter((s) => s.provisioned_by === 'admin' || s.provisioned_by === 'seed'),
+      otherStores: items.filter((s) => s.provisioned_by !== 'admin' && s.provisioned_by !== 'seed'),
     }
   }, [data?.items])
 
@@ -101,7 +101,7 @@ export default function AdminStoresPage() {
         <Card>
           <CardHeader><CardTitle>Buat Seller Baru</CardTitle></CardHeader>
           <p className="mb-4 text-sm text-slate-500">
-            Seller yang dibuat di sini otomatis muncul di panel login demo. Toko seed (Toko Contoh, Toko Multi) hanya untuk testing API.
+            Seller baru otomatis muncul di panel login. Seed seller (seller@) juga tampil di panel login.
           </p>
           <div className="flex flex-col gap-3">
             <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -118,6 +118,7 @@ export default function AdminStoresPage() {
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader><CardTitle>Toko di Panel Login</CardTitle></CardHeader>
+            <p className="mb-3 text-xs text-slate-400">Seed seller@ + seller yang dibuat admin.</p>
             {isLoading ? (
               <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
             ) : adminStores.length === 0 ? (
@@ -128,7 +129,7 @@ export default function AdminStoresPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Toko Seed / Lama</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Toko Lainnya</CardTitle></CardHeader>
             <p className="mb-3 text-xs text-slate-400">Tidak muncul di panel login demo.</p>
             {otherStores.length === 0 ? (
               <p className="text-sm text-slate-500">Tidak ada.</p>

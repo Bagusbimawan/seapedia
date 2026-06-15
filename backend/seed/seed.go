@@ -58,6 +58,7 @@ func main() {
 					Name:          "Toko Contoh",
 					Description:   "Toko contoh untuk demo SEAPEDIA",
 					ProvisionedBy: store.ProvisionedSeed,
+					DemoPassword:  "seller123",
 				}
 				if err := storeRepo.Create(ctx, s); err != nil {
 					log.Printf("store seed: %v", err)

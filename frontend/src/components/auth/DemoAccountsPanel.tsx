@@ -65,7 +65,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
     <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
       <p className="mb-1 text-sm font-semibold text-amber-900">Akun Demo untuk Panitia</p>
       <p className="mb-3 text-xs text-amber-700">
-        Seller hanya muncul setelah dibuat oleh Admin di menu Toko. Klik baris untuk mengisi form login.
+        Seller (seed + buatan admin) muncul otomatis di bawah. Klik baris untuk mengisi form login.
       </p>
 
       <div className="overflow-hidden rounded-xl border border-amber-200 bg-white">

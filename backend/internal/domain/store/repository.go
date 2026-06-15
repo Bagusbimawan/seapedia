@@ -10,4 +10,5 @@ type Repository interface {
 	Update(ctx context.Context, s *Store) error
 	ListAll(ctx context.Context, page, limit int) ([]*Store, int64, error)
 	ListByProvisionedBy(ctx context.Context, provisionedBy string, page, limit int) ([]*Store, int64, error)
+	ListForDemoPanel(ctx context.Context, page, limit int) ([]*Store, int64, error)
 }

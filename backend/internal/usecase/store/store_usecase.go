@@ -78,9 +78,9 @@ func (u *Usecase) ListAll(ctx context.Context, page, limit int) ([]*store.Store,
 	return u.storeRepo.ListAll(ctx, page, limit)
 }
 
-// ListDemoSellers returns admin-provisioned sellers for the public demo panel.
+// ListDemoSellers returns seed + admin sellers for the public demo panel.
 func (u *Usecase) ListDemoSellers(ctx context.Context) ([]DemoSeller, error) {
-	stores, _, err := u.storeRepo.ListByProvisionedBy(ctx, store.ProvisionedAdmin, 1, 100)
+	stores, _, err := u.storeRepo.ListForDemoPanel(ctx, 1, 100)
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +91,15 @@ func (u *Usecase) ListDemoSellers(ctx context.Context) ([]DemoSeller, error) {
 		if err != nil {
 			continue
 		}
+		password := s.DemoPassword
+		if password == "" && seller.Email == "seller@seapedia.com" {
+			password = "seller123"
+		}
 		items = append(items, DemoSeller{
 			Email:        seller.Email,
 			Username:     seller.Username,
 			StoreName:    s.Name,
-			DemoPassword: s.DemoPassword,
+			DemoPassword: password,
 		})
 	}
 	return items, nil

@@ -9,6 +9,13 @@ import (
 
 // RunPendingMigrations applies SQL migrations that are safe to run on startup.
 func RunPendingMigrations(db *gorm.DB) error {
+	if err := apply002(db); err != nil {
+		return err
+	}
+	return applyDataFixes(db)
+}
+
+func apply002(db *gorm.DB) error {
 	var count int64
 	if err := db.Raw(`
 		SELECT COUNT(*) FROM information_schema.columns
@@ -32,5 +39,25 @@ func RunPendingMigrations(db *gorm.DB) error {
 		}
 	}
 	log.Println("migration 002_store_provision applied")
+	return nil
+}
+
+func applyDataFixes(db *gorm.DB) error {
+	log.Println("applying demo store data fixes...")
+
+	fixes := []string{
+		// Hapus toko multi-role lama
+		`DELETE FROM products WHERE store_id IN (SELECT id FROM stores WHERE name = 'Toko Multi')`,
+		`DELETE FROM stores WHERE name = 'Toko Multi'`,
+		// Seed seller@ muncul di panel login demo
+		`UPDATE stores s SET provisioned_by = 'seed', demo_password = 'seller123'
+		 FROM users u
+		 WHERE s.seller_user_id = u.id AND u.email = 'seller@seapedia.com'`,
+	}
+	for _, stmt := range fixes {
+		if err := db.Exec(stmt).Error; err != nil {
+			return fmt.Errorf("data fix failed: %w", err)
+		}
+	}
 	return nil
 }

@@ -91,6 +91,26 @@ func (r *storeRepository) ListByProvisionedBy(ctx context.Context, provisionedBy
 	return stores, total, nil
 }
 
+func (r *storeRepository) ListForDemoPanel(ctx context.Context, page, limit int) ([]*store.Store, int64, error) {
+	var total int64
+	var models []StoreModel
+	offset := (page - 1) * limit
+
+	q := r.db.WithContext(ctx).Model(&StoreModel{}).
+		Where("provisioned_by IN ?", []string{store.ProvisionedAdmin, store.ProvisionedSeed})
+	q.Count(&total)
+	if err := q.Offset(offset).Limit(limit).Find(&models).Error; err != nil {
+		return nil, 0, err
+	}
+
+	stores := make([]*store.Store, 0, len(models))
+	for _, m := range models {
+		mc := m
+		stores = append(stores, modelToStore(&mc))
+	}
+	return stores, total, nil
+}
+
 func storeToModel(s *store.Store) *StoreModel {
 	return &StoreModel{
 		ID:            s.ID,
