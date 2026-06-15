@@ -1,15 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Badge from '@/components/ui/Badge'
 import { listStores, adminCreateSeller } from '@/lib/api/admin'
 import { formatDate } from '@/lib/format'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { ADMIN_NAV } from '@/lib/nav'
+import type { Store } from '@/types'
+
+function provisionLabel(by?: string) {
+  if (by === 'admin') return { label: 'Panel Login', variant: 'info' as const }
+  if (by === 'seed') return { label: 'Seed (testing)', variant: 'default' as const }
+  return { label: 'Seller', variant: 'default' as const }
+}
 
 export default function AdminStoresPage() {
   const queryClient = useQueryClient()
@@ -28,6 +36,14 @@ export default function AdminStoresPage() {
     queryKey: storesKey,
     queryFn: async () => (await listStores({ limit: 50 })).data.data,
   })
+
+  const { adminStores, otherStores } = useMemo(() => {
+    const items = data?.items ?? []
+    return {
+      adminStores: items.filter((s) => s.provisioned_by === 'admin'),
+      otherStores: items.filter((s) => s.provisioned_by !== 'admin'),
+    }
+  }, [data?.items])
 
   const handleCreate = async () => {
     if (!username.trim() || !email.trim() || !password || !storeName.trim()) {
@@ -51,7 +67,7 @@ export default function AdminStoresPage() {
       queryClient.invalidateQueries({ queryKey: ['demo-sellers'] })
 
       setSuccess(
-        `Seller dibuat: ${created?.user.email} / ${created?.demo_password} — muncul di panel login`
+        `Seller dibuat! ${created?.user.email} / ${created?.demo_password} — sudah muncul di panel login`
       )
       setUsername('')
       setEmail('')
@@ -65,13 +81,27 @@ export default function AdminStoresPage() {
     }
   }
 
+  const renderStore = (s: Store) => {
+    const badge = provisionLabel(s.provisioned_by)
+    return (
+      <div key={s.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-semibold text-slate-900">{s.name}</p>
+          <Badge variant={badge.variant}>{badge.label}</Badge>
+        </div>
+        <p className="text-sm text-slate-500">{s.description || '—'}</p>
+        <p className="mt-1 text-xs text-slate-400">{formatDate(s.created_at)}</p>
+      </div>
+    )
+  }
+
   return (
     <DashboardLayout title="Toko & Seller" navItems={ADMIN_NAV} role="ADMIN">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle>Buat Seller Baru</CardTitle></CardHeader>
           <p className="mb-4 text-sm text-slate-500">
-            Buat akun seller + toko sekaligus. Seller akan muncul otomatis di panel login demo.
+            Seller yang dibuat di sini otomatis muncul di panel login demo. Toko seed (Toko Contoh, Toko Multi) hanya untuk testing API.
           </p>
           <div className="flex flex-col gap-3">
             <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -85,24 +115,28 @@ export default function AdminStoresPage() {
           </div>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle>Daftar Toko</CardTitle></CardHeader>
-          {isLoading ? (
-            <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
-          ) : !data?.items?.length ? (
-            <p className="text-sm text-slate-500">Belum ada toko.</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {data.items.map((s) => (
-                <div key={s.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                  <p className="font-semibold text-slate-900">{s.name}</p>
-                  <p className="text-sm text-slate-500">{s.description || '—'}</p>
-                  <p className="mt-1 text-xs text-slate-400">{formatDate(s.created_at)}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader><CardTitle>Toko di Panel Login</CardTitle></CardHeader>
+            {isLoading ? (
+              <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
+            ) : adminStores.length === 0 ? (
+              <p className="text-sm text-slate-500">Belum ada — buat seller baru di form kiri.</p>
+            ) : (
+              <div className="flex flex-col gap-3">{adminStores.map(renderStore)}</div>
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Toko Seed / Lama</CardTitle></CardHeader>
+            <p className="mb-3 text-xs text-slate-400">Tidak muncul di panel login demo.</p>
+            {otherStores.length === 0 ? (
+              <p className="text-sm text-slate-500">Tidak ada.</p>
+            ) : (
+              <div className="flex flex-col gap-3">{otherStores.map(renderStore)}</div>
+            )}
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   )

@@ -87,7 +87,7 @@ func (u *Usecase) CreateStore(ctx context.Context, sellerUserID, name, descripti
 		ProvisionedBy: store.ProvisionedAdmin,
 	}
 	if err := u.storeRepo.Create(ctx, s); err != nil {
-		return nil, err
+		return nil, postgres.MapDBErr(err)
 	}
 	return s, nil
 }
@@ -134,7 +134,7 @@ func (u *Usecase) CreateSeller(ctx context.Context, username, email, password, s
 		Roles:        []user.Role{user.RoleSeller},
 	}
 	if err := u.userRepo.Create(ctx, newUser); err != nil {
-		return nil, err
+		return nil, postgres.MapDBErr(err)
 	}
 
 	s := &store.Store{
@@ -146,7 +146,7 @@ func (u *Usecase) CreateSeller(ctx context.Context, username, email, password, s
 		DemoPassword:  password,
 	}
 	if err := u.storeRepo.Create(ctx, s); err != nil {
-		return nil, err
+		return nil, postgres.MapDBErr(err)
 	}
 
 	return &CreateSellerResult{

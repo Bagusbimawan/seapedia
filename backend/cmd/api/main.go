@@ -53,6 +53,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("database: %v", err)
 	}
+	if err := postgres.RunPendingMigrations(db); err != nil {
+		log.Fatalf("migrations: %v", err)
+	}
 
 	// Repositories
 	userRepo := postgres.NewUserRepository(db)

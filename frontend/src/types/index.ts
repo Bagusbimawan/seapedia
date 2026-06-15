@@ -34,6 +34,7 @@ export interface Store {
   seller_user_id: string
   name: string
   description?: string
+  provisioned_by?: 'seed' | 'admin' | 'seller'
   created_at: string
 }
 

@@ -77,20 +77,22 @@ type AdminCreateStoreReq struct {
 }
 
 type StoreResponse struct {
-	ID           string `json:"id"`
-	SellerUserID string `json:"seller_user_id"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	CreatedAt    string `json:"created_at"`
+	ID            string `json:"id"`
+	SellerUserID  string `json:"seller_user_id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	ProvisionedBy string `json:"provisioned_by,omitempty"`
+	CreatedAt     string `json:"created_at"`
 }
 
 func ToStoreResponse(s *store.Store) StoreResponse {
 	return StoreResponse{
-		ID:           s.ID,
-		SellerUserID: s.SellerUserID,
-		Name:         s.Name,
-		Description:  s.Description,
-		CreatedAt:    s.CreatedAt.Format(time.RFC3339),
+		ID:            s.ID,
+		SellerUserID:  s.SellerUserID,
+		Name:          s.Name,
+		Description:   s.Description,
+		ProvisionedBy: s.ProvisionedBy,
+		CreatedAt:     s.CreatedAt.Format(time.RFC3339),
 	}
 }
 
