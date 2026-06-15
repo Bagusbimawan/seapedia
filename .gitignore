@@ -51,6 +51,7 @@ frontend/.turbo/
 frontend/.env.local
 frontend/.env.production
 backend/.env
+scripts/setup-prod-env.sh
 
 # ===========================
 # Logs

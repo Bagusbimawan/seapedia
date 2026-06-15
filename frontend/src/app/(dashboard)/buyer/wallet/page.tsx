@@ -7,6 +7,7 @@ import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import { topup } from '@/lib/api/wallet'
 import { getApiError } from '@/lib/apiError'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
 import { useBuyerStore } from '@/stores/useBuyerStore'
 import { formatRupiah, formatDate } from '@/lib/format'
@@ -21,8 +22,10 @@ const TX_TYPE_LABEL: Record<string, string> = {
 }
 
 export default function BuyerWalletPage() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const wallet = useBuyerStore((s) => s.wallet)
   const walletLoading = useBuyerStore((s) => s.walletLoading)
+  const walletError = useBuyerStore((s) => s.walletError)
   const transactions = useBuyerStore((s) => s.transactions)
   const fetchWallet = useBuyerStore((s) => s.fetchWallet)
   const setWallet = useBuyerStore((s) => s.setWallet)
@@ -76,8 +79,10 @@ export default function BuyerWalletPage() {
         <Card className="overflow-hidden p-0">
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 px-6 py-8 text-white">
             <p className="text-sm font-medium text-emerald-100">Saldo Saat Ini</p>
-            {walletLoading && !wallet ? (
+            {walletLoading || (isAuthenticated && !wallet && !walletError) ? (
               <div className="mt-2 h-10 w-40 animate-pulse rounded-lg bg-white/20" />
+            ) : walletError ? (
+              <p className="mt-1 text-lg text-emerald-100">Gagal memuat saldo</p>
             ) : (
               <p className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
                 {formatRupiah(wallet?.balance ?? 0)}

@@ -11,13 +11,17 @@ import { OrderListItem } from '@/components/ui/ListHelpers'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useBuyerStore } from '@/stores/useBuyerStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { BUYER_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
 
 export default function BuyerDashboardPage() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const wallet = useBuyerStore((s) => s.wallet)
+  const walletLoading = useBuyerStore((s) => s.walletLoading)
+  const walletError = useBuyerStore((s) => s.walletError)
   const orders = useBuyerStore((s) => s.orders)
   const ordersLoading = useBuyerStore((s) => s.ordersLoading)
   const ordersError = useBuyerStore((s) => s.ordersError)
@@ -43,7 +47,18 @@ export default function BuyerDashboardPage() {
       role="BUYER"
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Saldo Dompet" value={formatRupiah(wallet?.balance ?? 0)} icon={Wallet} color="green" />
+        <StatCard
+          label="Saldo Dompet"
+          value={
+            walletLoading || (isAuthenticated && !wallet && !walletError)
+              ? '...'
+              : walletError
+                ? '—'
+                : formatRupiah(wallet?.balance ?? 0)
+          }
+          icon={Wallet}
+          color="green"
+        />
         <StatCard label="Item Keranjang" value={cart?.items?.length ?? 0} icon={ShoppingCart} color="blue" />
         <StatCard label="Total Pesanan" value={orders?.total ?? 0} icon={Package} color="purple" />
         <StatCard label="Belanja Lagi" value="→" icon={Store} color="ocean" sub="Jelajahi produk" />

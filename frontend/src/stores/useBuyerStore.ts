@@ -107,5 +107,5 @@ export const useBuyerStore = create<BuyerState>((set) => ({
     }
   },
 
-  reset: () => set(emptyBuyer),
+  reset: () => set({ ...emptyBuyer, walletLoading: false }),
 }))

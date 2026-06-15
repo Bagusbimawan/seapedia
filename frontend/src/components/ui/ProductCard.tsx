@@ -18,6 +18,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-ocean-700 transition-colors">
             {product.name}
           </h3>
+          {product.store_name && (
+            <p className="mt-0.5 text-xs font-medium text-amber-700">{product.store_name}</p>
+          )}
           {product.description && (
             <p className="mt-1 line-clamp-1 text-xs text-slate-500">{product.description}</p>
           )}

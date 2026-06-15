@@ -49,18 +49,41 @@ func (r *productRepository) ListByStore(ctx context.Context, storeID string, pag
 
 func (r *productRepository) ListAll(ctx context.Context, search string, page, limit int) ([]*product.Product, int64, error) {
 	var total int64
-	var models []ProductModel
 	offset := (page - 1) * limit
 
-	q := r.db.WithContext(ctx).Model(&ProductModel{})
-	if search != "" {
-		q = q.Where("name ILIKE ?", "%"+search+"%")
+	type productRow struct {
+		ProductModel
+		StoreName string `gorm:"column:store_name"`
 	}
-	q.Count(&total)
-	if err := q.Offset(offset).Limit(limit).Find(&models).Error; err != nil {
+
+	countQ := r.db.WithContext(ctx).Model(&ProductModel{})
+	if search != "" {
+		countQ = countQ.Where("products.name ILIKE ?", "%"+search+"%")
+	}
+	if err := countQ.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	return modelsToProducts(models), total, nil
+
+	q := r.db.WithContext(ctx).
+		Table("products").
+		Select("products.*, stores.name AS store_name").
+		Joins("JOIN stores ON stores.id = products.store_id")
+	if search != "" {
+		q = q.Where("products.name ILIKE ?", "%"+search+"%")
+	}
+
+	var rows []productRow
+	if err := q.Offset(offset).Limit(limit).Order("products.created_at DESC").Find(&rows).Error; err != nil {
+		return nil, 0, err
+	}
+
+	products := make([]*product.Product, 0, len(rows))
+	for _, row := range rows {
+		p := modelToProduct(&row.ProductModel)
+		p.StoreName = row.StoreName
+		products = append(products, p)
+	}
+	return products, total, nil
 }
 
 func (r *productRepository) Update(ctx context.Context, p *product.Product) error {

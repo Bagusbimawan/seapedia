@@ -138,6 +138,7 @@ type CreateProductReq struct {
 type ProductResponse struct {
 	ID          string `json:"id"`
 	StoreID     string `json:"store_id"`
+	StoreName   string `json:"store_name,omitempty"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Price       int64  `json:"price"`
@@ -149,6 +150,7 @@ func ToProductResponse(p *product.Product) ProductResponse {
 	return ProductResponse{
 		ID:          p.ID,
 		StoreID:     p.StoreID,
+		StoreName:   p.StoreName,
 		Name:        p.Name,
 		Description: p.Description,
 		Price:       p.Price,

@@ -6,6 +6,7 @@ import "time"
 type Product struct {
 	ID          string
 	StoreID     string
+	StoreName   string // populated on public list (JOIN stores)
 	Name        string
 	Description string
 	Price       int64

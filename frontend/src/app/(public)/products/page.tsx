@@ -37,7 +37,7 @@ export default function ProductsPage() {
     <div className="container-page page-section">
       <PageHeader
         title="Semua Produk"
-        subtitle="Temukan produk laut segar pilihan terbaik dari penjual terpercaya"
+        subtitle="Produk dari semua toko — nama toko ditampilkan di setiap kartu"
       />
 
       <form onSubmit={handleSearch} className="mb-8 flex max-w-xl gap-3">

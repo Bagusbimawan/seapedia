@@ -12,6 +12,7 @@ import { sellerCreateProduct, sellerUpdateProduct, sellerDeleteProduct } from '@
 import { formatRupiah } from '@/lib/format'
 import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
 import { useSellerStore } from '@/stores/useSellerStore'
+import { usePublicStore } from '@/stores/usePublicStore'
 import { SELLER_NAV } from '@/lib/nav'
 import type { Product } from '@/types'
 import Input from '@/components/ui/Input'
@@ -23,7 +24,10 @@ const emptyForm = { name: '', description: '', price: 0, stock: 0 }
 export default function SellerProductsPage() {
   const products = useSellerStore((s) => s.products)
   const productsLoading = useSellerStore((s) => s.productsLoading)
+  const store = useSellerStore((s) => s.store)
+  const fetchStore = useSellerStore((s) => s.fetchStore)
   const fetchProducts = useSellerStore((s) => s.fetchProducts)
+  const resetPublic = usePublicStore((s) => s.reset)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -32,8 +36,12 @@ export default function SellerProductsPage() {
   const [error, setError] = useState<string | null>(null)
 
   useFetchOnAuth(() => {
-    void fetchProducts({ limit: 50 })
+    void fetchStore()
   }, [])
+
+  useFetchOnAuth(() => {
+    if (store) void fetchProducts({ limit: 50 })
+  }, [store?.id])
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setModalOpen(true) }
   const openEdit = (p: Product) => {
@@ -49,6 +57,7 @@ export default function SellerProductsPage() {
       if (editing) await sellerUpdateProduct(editing.id, form)
       else await sellerCreateProduct(form)
       await fetchProducts({ limit: 50 })
+      resetPublic()
       setModalOpen(false)
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Gagal menyimpan produk')
@@ -59,6 +68,7 @@ export default function SellerProductsPage() {
     if (!confirm('Hapus produk ini?')) return
     await sellerDeleteProduct(id)
     await fetchProducts({ limit: 50 })
+    resetPublic()
   }
 
   return (
@@ -66,6 +76,8 @@ export default function SellerProductsPage() {
       <div className="mb-4 flex justify-end"><Button onClick={openCreate}>Tambah Produk</Button></div>
       {productsLoading && !products ? (
         <LoadingSkeleton rows={3} />
+      ) : !store ? (
+        <EmptyState icon={Package} title="Belum ada toko" description="Buat toko dulu di menu Toko Saya" action={<Button onClick={() => window.location.href = '/seller/store'}>Ke Toko Saya</Button>} />
       ) : !products?.items?.length ? (
         <EmptyState icon={Package} title="Belum ada produk" description="Tambahkan produk pertama Anda" action={<Button onClick={openCreate}>Tambah Produk</Button>} />
       ) : (

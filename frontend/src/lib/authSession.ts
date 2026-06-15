@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { resetAllStores } from '@/stores/resetStores'
+import { prefetchForRole } from '@/lib/prefetchStores'
 import type { Role, User } from '@/types'
 
 const COOKIE_OPTS = { expires: 7, sameSite: 'lax' as const, path: '/' }
@@ -74,12 +75,17 @@ export function establishSession(
   if (options?.forceClear || prevUserId !== nextUserId || prevToken !== token) {
     resetClientStores()
   }
+
+  if (activeRole !== 'PENDING') {
+    prefetchForRole(activeRole)
+  }
 }
 
 export function updateActiveRole(token: string, role: Role) {
   useAuthStore.getState().setActiveRole(token, role)
   setAuthCookies(token, role)
   resetClientStores()
+  prefetchForRole(role)
 }
 
 export function clearSession(options?: { redirect?: boolean }) {
