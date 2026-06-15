@@ -15,9 +15,10 @@ import { getCart } from '@/lib/api/cart'
 import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { useAuth } from '@/hooks/useAuth'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { BUYER_NAV } from '@/lib/nav'
-import type { OrderStatus } from '@/types'
+import type { OrderStatus, PaginatedData, Order } from '@/types'
 
 export default function BuyerDashboardPage() {
   const { isReady } = useAuth()
@@ -29,23 +30,24 @@ export default function BuyerDashboardPage() {
     queryKey: walletKey,
     queryFn: async () => (await getBalance()).data.data,
     enabled: isReady,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    ...cachedQueryOptions,
   })
   const { data: cart } = useQuery({
     queryKey: cartKey,
     queryFn: async () => (await getCart()).data.data,
     enabled: isReady,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    ...cachedQueryOptions,
+    placeholderData: (previous) => previous,
   })
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ordersKey,
-    queryFn: async () => (await buyerOrders({ limit: 5 })).data.data,
+    queryFn: async () => (await buyerOrders({ limit: 5 })).data.data as PaginatedData<Order> | undefined,
     enabled: isReady,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    ...cachedQueryOptions,
   })
+
+  const orderItems = orders?.items ?? []
+  const showOrdersLoading = ordersLoading && orderItems.length === 0
 
   return (
     <DashboardLayout
@@ -75,9 +77,9 @@ export default function BuyerDashboardPage() {
           </Link>
         </CardHeader>
 
-        {ordersLoading ? (
+        {showOrdersLoading ? (
           <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-        ) : !orders?.items?.length ? (
+        ) : orderItems.length === 0 ? (
           <EmptyState
             icon={Package}
             title="Belum ada pembelian"
@@ -86,7 +88,7 @@ export default function BuyerDashboardPage() {
           />
         ) : (
           <div className="flex flex-col gap-3">
-            {orders.items.map((order) => (
+            {orderItems.map((order) => (
               <OrderListItem
                 key={order.id}
                 id={order.id}

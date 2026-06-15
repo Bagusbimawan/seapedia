@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Truck, Info, AlertCircle } from 'lucide-react'
+import { Truck, Info, AlertCircle, RefreshCw } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -11,20 +11,31 @@ import { LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { listAvailableJobs, takeJob } from '@/lib/api/delivery'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverJobsPage() {
   const queryClient = useQueryClient()
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const availableJobsKey = useScopedQueryKey('driver-available-jobs')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: availableJobsKey,
     queryFn: async () => (await listAvailableJobs({ limit: 20 })).data.data,
-    refetchInterval: 30000,
+    ...cachedQueryOptions,
   })
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const handleTake = async (id: string) => {
     setLoadingId(id)
@@ -40,13 +51,19 @@ export default function DriverJobsPage() {
 
   return (
     <DashboardLayout title="Pekerjaan Tersedia" subtitle="Ambil pekerjaan pengiriman yang sudah siap" navItems={DRIVER_NAV} role="DRIVER">
+      <div className="mb-4 flex justify-end">
+        <Button size="sm" variant="secondary" onClick={handleRefresh} isLoading={refreshing}>
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
       <div className="mb-4 flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
         <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
         <div className="text-sm text-blue-800">
           <p className="font-semibold">Alur Driver</p>
           <p className="mt-1 text-blue-700">
-            Driver bisa mengambil pekerjaan dari <strong>semua toko</strong> — tidak ada batasan toko.
-            Pekerjaan muncul setelah <strong>seller menekan &quot;Siap Kirim&quot;</strong> pada pesanan yang sudah dikemas.
+            Driver bisa mengambil pekerjaan dari <strong>semua toko</strong>.
+            Pekerjaan muncul setelah seller menekan <strong>Siap Kirim</strong> — klik <strong>Refresh</strong> untuk cek pekerjaan baru.
           </p>
         </div>
       </div>
@@ -64,7 +81,8 @@ export default function DriverJobsPage() {
         <EmptyState
           icon={Truck}
           title="Belum ada pekerjaan tersedia"
-          description="Pekerjaan akan muncul setelah seller menandai pesanan sebagai 'Siap Kirim'. Coba refresh halaman ini secara berkala."
+          description="Klik Refresh setelah seller menandai pesanan sebagai Siap Kirim."
+          action={<Button variant="primary" onClick={handleRefresh} isLoading={refreshing}>Refresh</Button>}
         />
       ) : (
         <div className="flex flex-col gap-3">

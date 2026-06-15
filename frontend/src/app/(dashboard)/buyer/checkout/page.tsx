@@ -18,6 +18,8 @@ import { getBalance } from '@/lib/api/wallet'
 import { getApiError } from '@/lib/apiError'
 import { useBuyerCart } from '@/hooks/useBuyerCart'
 import { refreshBuyerCartCache } from '@/lib/cartCache'
+import { refreshBuyerOrdersCache } from '@/lib/orderCache'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { formatRupiah } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
@@ -50,13 +52,13 @@ export default function BuyerCheckoutPage() {
   const { data: addresses } = useQuery({
     queryKey: addressesKey,
     queryFn: async () => (await listAddresses()).data.data ?? [],
+    ...cachedQueryOptions,
   })
 
   const { data: wallet, refetch: refetchWallet } = useQuery({
     queryKey: walletKey,
     queryFn: async () => (await getBalance()).data.data,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    ...cachedQueryOptions,
   })
 
   useEffect(() => {
@@ -177,6 +179,7 @@ export default function BuyerCheckoutPage() {
       setPaid(true)
       clearCartCache()
       await queryClient.invalidateQueries({ queryKey: walletKey })
+      await refreshBuyerOrdersCache(queryClient)
       if (orders.length === 1) {
         router.replace(`/buyer/orders/${orders[0].id}`)
       } else {

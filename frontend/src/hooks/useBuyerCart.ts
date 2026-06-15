@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCart } from '@/lib/api/cart'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { refreshBuyerCartCache, syncBuyerCartCache } from '@/lib/cartCache'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -42,9 +43,8 @@ export function useBuyerCart() {
     queryKey: cartKey,
     queryFn: async () => (await getCart()).data.data as Cart | undefined,
     enabled: authReady,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    ...cachedQueryOptions,
+    placeholderData: (previous) => previous,
   })
 
   const lineItems: CartLineItem[] = useMemo(() => {
@@ -69,16 +69,16 @@ export function useBuyerCart() {
   }
 
   const hasItems = (cartQuery.data?.items?.length ?? 0) > 0
-  const isLoading = cartQuery.isLoading || (cartQuery.isFetching && !hasItems)
+  const isInitialLoading = cartQuery.isPending && cartQuery.data === undefined
 
   return {
     cart: cartQuery.data,
     lineItems,
     subtotal,
-    isLoading,
+    isLoading: isInitialLoading,
     isFetching: cartQuery.isFetching,
-    isEmpty: !isLoading && !cartQuery.isFetching && !hasItems,
-    isReady: !isLoading && hasItems,
+    isEmpty: !isInitialLoading && !hasItems,
+    isReady: hasItems,
     isError: cartQuery.isError,
     error: cartQuery.error,
     clearCartCache,

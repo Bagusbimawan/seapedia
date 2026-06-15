@@ -8,6 +8,7 @@ import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import QuantityStepper from '@/components/ui/QuantityStepper'
 import { getBalance, topup, getTransactions } from '@/lib/api/wallet'
+import { cachedQueryOptions } from '@/lib/queryConfig'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
@@ -31,15 +32,13 @@ export default function BuyerWalletPage() {
   const { data: wallet, isLoading } = useQuery({
     queryKey: walletKey,
     queryFn: async () => (await getBalance()).data.data,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    ...cachedQueryOptions,
   })
 
   const { data: txs } = useQuery({
     queryKey: txsKey,
     queryFn: async () => (await getTransactions({ limit: 50 })).data.data,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    ...cachedQueryOptions,
   })
 
   const handleTopup = async () => {

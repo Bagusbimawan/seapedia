@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { Package } from 'lucide-react'
+import { Package, RefreshCw } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
@@ -11,22 +11,47 @@ import { OrderListItem, LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
+import { cachedQueryOptions } from '@/lib/queryConfig'
+import { useAuth } from '@/hooks/useAuth'
 import { useScopedQueryKey } from '@/lib/queryKeys'
 import { BUYER_NAV } from '@/lib/nav'
-import type { OrderStatus } from '@/types'
+import type { OrderStatus, PaginatedData, Order } from '@/types'
 
 export default function BuyerOrdersPage() {
+  const { isReady } = useAuth()
   const [page, setPage] = useState(1)
+  const [refreshing, setRefreshing] = useState(false)
   const ordersKey = useScopedQueryKey('buyer-orders', page)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ordersKey,
-    queryFn: async () => (await buyerOrders({ page, limit: 10 })).data.data,
+    queryFn: async () => (await buyerOrders({ page, limit: 10 })).data.data as PaginatedData<Order> | undefined,
+    enabled: isReady,
+    ...cachedQueryOptions,
+    placeholderData: (previous: PaginatedData<Order> | undefined) => previous,
   })
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const showSkeleton = isLoading && !data
 
   return (
     <DashboardLayout title="Riwayat Pembelian" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">
-      {isLoading ? (
+      <div className="mb-4 flex justify-end">
+        <Button size="sm" variant="secondary" onClick={handleRefresh} isLoading={refreshing}>
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      </div>
+
+      {showSkeleton ? (
         <LoadingSkeleton rows={4} />
       ) : !data?.items?.length ? (
         <EmptyState
