@@ -39,31 +39,19 @@ func (u *Usecase) GetOrCreate(ctx context.Context, userID string) (*cart.Cart, e
 	return u.cartRepo.FindByUserID(ctx, userID)
 }
 
-// AddItem adds a product to the cart with single-store enforcement.
+// AddItem adds a product to the cart (multi-store allowed).
 func (u *Usecase) AddItem(ctx context.Context, userID, productID string, qty int) (*cart.Cart, error) {
 	if qty <= 0 {
 		return nil, apperror.BadRequest("quantity must be positive")
 	}
 
-	prod, err := u.productRepo.FindByID(ctx, productID)
-	if err != nil {
+	if _, err := u.productRepo.FindByID(ctx, productID); err != nil {
 		return nil, err
 	}
 
 	c, err := u.GetOrCreate(ctx, userID)
 	if err != nil {
 		return nil, err
-	}
-
-	if !c.IsEmpty() && !c.BelongsToStore(prod.StoreID) {
-		return nil, apperror.BadRequest("cart is locked to another store, please clear cart first")
-	}
-
-	if c.StoreID == nil {
-		storeID := prod.StoreID
-		if err := u.cartRepo.UpdateStoreID(ctx, c.ID, &storeID); err != nil {
-			return nil, err
-		}
 	}
 
 	if err := u.cartRepo.AddItem(ctx, c.ID, productID, qty); err != nil {

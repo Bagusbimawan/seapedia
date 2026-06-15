@@ -75,6 +75,10 @@ func (u *Usecase) MarkReady(ctx context.Context, sellerID, orderID string) (*ord
 	if o.StoreID != s.ID {
 		return nil, apperror.Forbidden("order does not belong to your store")
 	}
+
+	if o.Status == order.StatusMenungguPengirim {
+		return o, nil
+	}
 	if o.Status != order.StatusSedangDikemas {
 		return nil, apperror.BadRequest("order is not in SEDANG_DIKEMAS status")
 	}
@@ -90,8 +94,16 @@ func (u *Usecase) MarkReady(ctx context.Context, sellerID, orderID string) (*ord
 	}
 
 	incomeAmount := o.Total - o.DeliveryFee
-	if err := u.incomeRepo.Insert(ctx, s.ID, orderID, "INCOME", incomeAmount); err != nil {
-		return nil, err
+	if incomeAmount > 0 {
+		existing, err := u.orderRepo.FindIncomeByOrder(ctx, orderID)
+		if err != nil {
+			return nil, err
+		}
+		if existing == 0 {
+			if err := u.incomeRepo.Insert(ctx, s.ID, orderID, "INCOME", incomeAmount); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	o.Status = order.StatusMenungguPengirim

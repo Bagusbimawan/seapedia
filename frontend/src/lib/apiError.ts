@@ -8,6 +8,8 @@ export function getApiError(err: unknown, fallback = 'Terjadi kesalahan. Silakan
 const ERROR_MAP: Record<string, string> = {
   'order is not ready for pickup':
     'Pesanan belum siap diambil. Seller harus menekan "Siap Kirim" terlebih dahulu setelah selesai mengemas pesanan.',
+  'order is not in SEDANG_DIKEMAS status':
+    'Pesanan sudah tidak dalam status Sedang Dikemas. Refresh halaman untuk melihat status terbaru.',
   'order is not in delivery':
     'Pesanan tidak sedang dalam proses pengiriman.',
   'job already completed':

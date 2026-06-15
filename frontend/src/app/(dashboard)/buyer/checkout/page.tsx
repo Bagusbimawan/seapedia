@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -75,7 +75,12 @@ export default function BuyerCheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when cart subtotal changes
   }, [subtotal])
 
-  const deliveryFee = DELIVERY_OPTIONS.find((d) => d.value === deliveryMethod)?.fee ?? 0
+  const deliveryFeePerStore = DELIVERY_OPTIONS.find((d) => d.value === deliveryMethod)?.fee ?? 0
+  const storeCount = useMemo(() => {
+    const ids = new Set(lineItems.map((item) => item.store_id).filter(Boolean))
+    return Math.max(ids.size, 1)
+  }, [lineItems])
+  const deliveryFee = deliveryFeePerStore * storeCount
   const taxableBase = Math.max(0, subtotal - discountAmount)
   const taxAmount = Math.floor(taxableBase * 12 / 100)
   const total = taxableBase + taxAmount + deliveryFee
@@ -166,13 +171,17 @@ export default function BuyerCheckoutPage() {
         delivery_method: deliveryMethod,
         discount_code: code || undefined,
       })
-      const orderId = res.data.data?.id
-      if (!orderId) throw new Error('Respons pesanan tidak valid')
+      const orders = res.data.data?.orders ?? []
+      if (!orders.length) throw new Error('Respons pesanan tidak valid')
 
       setPaid(true)
       clearCartCache()
       await queryClient.invalidateQueries({ queryKey: walletKey })
-      router.replace(`/buyer/orders/${orderId}`)
+      if (orders.length === 1) {
+        router.replace(`/buyer/orders/${orders[0].id}`)
+      } else {
+        router.replace('/buyer/orders')
+      }
     } catch (err: unknown) {
       setError(getApiError(err, 'Checkout gagal'))
       await refreshBuyerCartCache(queryClient)

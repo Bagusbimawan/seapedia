@@ -67,17 +67,21 @@ func New(
 	}
 }
 
-// Execute performs the full checkout flow.
-func (u *Usecase) Execute(ctx context.Context, buyerID string, input Input) (*order.Order, error) {
-	cartID, storeID, cartItems, err := u.cartUC.GetOrCreate(ctx, buyerID)
+type storeCheckoutGroup struct {
+	storeID    string
+	items      []*order.OrderItem
+	stockItems []postgres.StockDecrement
+	subtotal   int64
+}
+
+// Execute performs checkout. Items from multiple stores become separate orders.
+func (u *Usecase) Execute(ctx context.Context, buyerID string, input Input) ([]*order.Order, error) {
+	cartID, _, cartItems, err := u.cartUC.GetOrCreate(ctx, buyerID)
 	if err != nil {
 		return nil, err
 	}
 	if len(cartItems) == 0 {
 		return nil, apperror.BadRequest("cart is empty")
-	}
-	if storeID == nil {
-		return nil, apperror.BadRequest("cart has no store")
 	}
 
 	addrUserID, label, street, city, zipCode, err := u.addrRepo.FindByID(ctx, input.AddressID)
@@ -88,9 +92,8 @@ func (u *Usecase) Execute(ctx context.Context, buyerID string, input Input) (*or
 		return nil, apperror.Forbidden("address does not belong to you")
 	}
 
-	var subtotal int64
-	var orderItems []*order.OrderItem
-	var stockItems []postgres.StockDecrement
+	groups := make(map[string]*storeCheckoutGroup)
+	var totalSubtotal int64
 
 	for _, ci := range cartItems {
 		prod, err := u.productRepo.FindByID(ctx, ci.ProductID)
@@ -100,16 +103,24 @@ func (u *Usecase) Execute(ctx context.Context, buyerID string, input Input) (*or
 		if prod.Stock < ci.Quantity {
 			return nil, apperror.BadRequest("insufficient stock for product " + prod.Name)
 		}
+
+		group, ok := groups[prod.StoreID]
+		if !ok {
+			group = &storeCheckoutGroup{storeID: prod.StoreID}
+			groups[prod.StoreID] = group
+		}
+
 		lineTotal := prod.Price * int64(ci.Quantity)
-		subtotal += lineTotal
-		orderItems = append(orderItems, &order.OrderItem{
+		group.subtotal += lineTotal
+		totalSubtotal += lineTotal
+		group.items = append(group.items, &order.OrderItem{
 			ID:            uuid.New().String(),
 			ProductID:     prod.ID,
 			NameSnapshot:  prod.Name,
 			PriceSnapshot: prod.Price,
 			Quantity:      ci.Quantity,
 		})
-		stockItems = append(stockItems, postgres.StockDecrement{
+		group.stockItems = append(group.stockItems, postgres.StockDecrement{
 			ProductID: prod.ID,
 			Qty:       ci.Quantity,
 		})
@@ -128,72 +139,99 @@ func (u *Usecase) Execute(ctx context.Context, buyerID string, input Input) (*or
 		if !d.IsUsable(clock.Now()) {
 			return nil, apperror.BadRequest("discount is not usable")
 		}
-		discountAmount = d.Calculate(subtotal)
+		discountAmount = d.Calculate(totalSubtotal)
 		discountID = &d.ID
 		isVoucher = d.Kind == discount.KindVoucher
 	}
-
-	taxableBase := subtotal - discountAmount
-	taxAmount := taxableBase * 12 / 100
-	deliveryFee := input.DeliveryMethod.Fee()
-	total := taxableBase + taxAmount + deliveryFee
 
 	w, err := u.walletRepo.FindByUserID(ctx, buyerID)
 	if err != nil {
 		return nil, err
 	}
-	if w.Balance < total {
+
+	now := clock.Now()
+	deadlineAt := now.AddDate(0, 0, input.DeliveryMethod.DeadlineDays())
+	deliveryFee := input.DeliveryMethod.Fee()
+	addrSnapshot := order.AddressSnapshot{
+		Label:   label,
+		Street:  street,
+		City:    city,
+		ZipCode: zipCode,
+	}
+
+	var batch []postgres.CheckoutParams
+	var grandTotal int64
+	remainingDiscount := discountAmount
+	groupKeys := make([]string, 0, len(groups))
+	for storeID := range groups {
+		groupKeys = append(groupKeys, storeID)
+	}
+
+	for i, storeID := range groupKeys {
+		group := groups[storeID]
+		storeDiscount := int64(0)
+		if discountAmount > 0 && totalSubtotal > 0 {
+			if i == len(groupKeys)-1 {
+				storeDiscount = remainingDiscount
+			} else {
+				storeDiscount = discountAmount * group.subtotal / totalSubtotal
+				remainingDiscount -= storeDiscount
+			}
+		}
+
+		taxableBase := group.subtotal - storeDiscount
+		taxAmount := taxableBase * 12 / 100
+		total := taxableBase + taxAmount + deliveryFee
+		grandTotal += total
+
+		orderID := uuid.New().String()
+		newOrder := &order.Order{
+			ID:              orderID,
+			BuyerUserID:     buyerID,
+			StoreID:         storeID,
+			DiscountID:      discountID,
+			AddressSnapshot: addrSnapshot,
+			DeliveryMethod:  input.DeliveryMethod,
+			Subtotal:        group.subtotal,
+			DiscountAmount:  storeDiscount,
+			TaxAmount:       taxAmount,
+			DeliveryFee:     deliveryFee,
+			Total:           total,
+			Status:          order.StatusSedangDikemas,
+			DeadlineAt:      deadlineAt,
+			Items:           group.items,
+			CreatedAt:       now,
+		}
+
+		batch = append(batch, postgres.CheckoutParams{
+			Order: newOrder,
+			DeliveryJob: &delivery.DeliveryJob{
+				ID:            uuid.New().String(),
+				OrderID:       orderID,
+				EarningAmount: deliveryFee * 80 / 100,
+			},
+			StockItems: group.stockItems,
+		})
+	}
+
+	if w.Balance < grandTotal {
 		return nil, apperror.BadRequest("insufficient wallet balance")
 	}
 
-	orderID := uuid.New().String()
-	now := clock.Now()
-	deadlineAt := now.AddDate(0, 0, input.DeliveryMethod.DeadlineDays())
-
-	newOrder := &order.Order{
-		ID:          orderID,
-		BuyerUserID: buyerID,
-		StoreID:     *storeID,
-		DiscountID:  discountID,
-		AddressSnapshot: order.AddressSnapshot{
-			Label:   label,
-			Street:  street,
-			City:    city,
-			ZipCode: zipCode,
-		},
-		DeliveryMethod: input.DeliveryMethod,
-		Subtotal:       subtotal,
-		DiscountAmount: discountAmount,
-		TaxAmount:      taxAmount,
-		DeliveryFee:    deliveryFee,
-		Total:          total,
-		Status:         order.StatusSedangDikemas,
-		DeadlineAt:     deadlineAt,
-		Items:          orderItems,
-	}
-
-	earningAmount := deliveryFee * 80 / 100
-	deliveryJob := &delivery.DeliveryJob{
-		ID:            uuid.New().String(),
-		OrderID:       orderID,
-		EarningAmount: earningAmount,
-	}
-
-	params := postgres.CheckoutParams{
-		Order:       newOrder,
-		WalletID:    w.ID,
-		Total:       total,
-		DiscountID:  discountID,
-		IsVoucher:   isVoucher,
-		CartID:      cartID,
-		DeliveryJob: deliveryJob,
-		StockItems:  stockItems,
-	}
-
-	if err := u.checkoutRepo.Execute(ctx, params); err != nil {
+	if err := u.checkoutRepo.ExecuteBatch(ctx, postgres.CheckoutBatchParams{
+		Orders:     batch,
+		WalletID:   w.ID,
+		GrandTotal: grandTotal,
+		DiscountID: discountID,
+		IsVoucher:  isVoucher,
+		CartID:     cartID,
+	}); err != nil {
 		return nil, err
 	}
 
-	newOrder.CreatedAt = now
-	return newOrder, nil
+	orders := make([]*order.Order, 0, len(batch))
+	for _, p := range batch {
+		orders = append(orders, p.Order)
+	}
+	return orders, nil
 }

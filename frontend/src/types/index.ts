@@ -70,6 +70,8 @@ export interface CartItem {
   name?: string
   price?: number
   stock?: number
+  store_id?: string
+  store_name?: string
 }
 
 export interface Cart {
@@ -119,6 +121,7 @@ export interface DeliveryJob {
   order_id: string
   driver_user_id?: string
   earning_amount: number
+  store_name?: string
   taken_at?: string
   completed_at?: string
   created_at: string
@@ -158,6 +161,10 @@ export interface CheckoutRequest {
   address_id: string
   delivery_method: DeliveryMethod
   discount_code?: string
+}
+
+export interface CheckoutResponse {
+  orders: Order[]
 }
 
 export interface LoginRequest {

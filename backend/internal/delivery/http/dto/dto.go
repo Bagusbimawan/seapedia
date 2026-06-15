@@ -240,6 +240,8 @@ type CartItemResponse struct {
 	Name      string `json:"name,omitempty"`
 	Price     int64  `json:"price,omitempty"`
 	Stock     int    `json:"stock,omitempty"`
+	StoreID   string `json:"store_id,omitempty"`
+	StoreName string `json:"store_name,omitempty"`
 }
 
 type CartResponse struct {
@@ -259,6 +261,8 @@ func ToCartResponse(c *cart.Cart) CartResponse {
 			resp.Name = item.Product.Name
 			resp.Price = item.Product.Price
 			resp.Stock = item.Product.Stock
+			resp.StoreID = item.Product.StoreID
+			resp.StoreName = item.Product.StoreName
 		}
 		items = append(items, resp)
 	}
@@ -271,6 +275,18 @@ type CheckoutReq struct {
 	AddressID      string `json:"address_id" validate:"required,uuid"`
 	DeliveryMethod string `json:"delivery_method" validate:"required,oneof=INSTANT NEXT_DAY REGULAR"`
 	DiscountCode   string `json:"discount_code" validate:"omitempty"`
+}
+
+type CheckoutResponse struct {
+	Orders []OrderResponse `json:"orders"`
+}
+
+func ToCheckoutResponse(orders []*order.Order) CheckoutResponse {
+	items := make([]OrderResponse, 0, len(orders))
+	for _, o := range orders {
+		items = append(items, ToOrderResponse(o))
+	}
+	return CheckoutResponse{Orders: items}
 }
 
 // ── Order ─────────────────────────────────────────────────────────────────────
@@ -378,6 +394,7 @@ type DeliveryJobResponse struct {
 	OrderID       string  `json:"order_id"`
 	DriverUserID  *string `json:"driver_user_id"`
 	EarningAmount int64   `json:"earning_amount"`
+	StoreName     string  `json:"store_name,omitempty"`
 	TakenAt       *string `json:"taken_at"`
 	CompletedAt   *string `json:"completed_at"`
 	CreatedAt     string  `json:"created_at"`
@@ -389,6 +406,7 @@ func ToDeliveryJobResponse(j *delivery.DeliveryJob) DeliveryJobResponse {
 		OrderID:       j.OrderID,
 		DriverUserID:  j.DriverUserID,
 		EarningAmount: j.EarningAmount,
+		StoreName:     j.StoreName,
 		CreatedAt:     j.CreatedAt.Format(time.RFC3339),
 	}
 	if j.TakenAt != nil {

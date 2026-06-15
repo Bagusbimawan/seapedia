@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bagus/seapedia/internal/domain/delivery"
+	"github.com/bagus/seapedia/internal/domain/order"
 	"github.com/bagus/seapedia/internal/pkg/apperror"
 	"gorm.io/gorm"
 )
@@ -54,16 +55,36 @@ func (r *deliveryRepository) FindByOrderID(ctx context.Context, orderID string) 
 }
 
 func (r *deliveryRepository) ListAvailable(ctx context.Context, page, limit int) ([]*delivery.DeliveryJob, int64, error) {
+	type row struct {
+		DeliveryJobModel
+		StoreName string `gorm:"column:store_name"`
+	}
+
 	var total int64
-	var models []DeliveryJobModel
+	var rows []row
 	offset := (page - 1) * limit
 
-	q := r.db.WithContext(ctx).Model(&DeliveryJobModel{}).Where("driver_user_id IS NULL")
+	q := r.db.WithContext(ctx).
+		Table("delivery_jobs").
+		Select(`delivery_jobs.id, delivery_jobs.order_id, delivery_jobs.driver_user_id,
+			delivery_jobs.earning_amount, delivery_jobs.taken_at, delivery_jobs.completed_at, delivery_jobs.created_at,
+			stores.name AS store_name`).
+		Joins("JOIN orders ON orders.id = delivery_jobs.order_id").
+		Joins("JOIN stores ON stores.id = orders.store_id").
+		Where("delivery_jobs.driver_user_id IS NULL AND orders.status = ?", string(order.StatusMenungguPengirim))
 	q.Count(&total)
-	if err := q.Order("created_at ASC").Offset(offset).Limit(limit).Find(&models).Error; err != nil {
+	if err := q.Order("delivery_jobs.created_at ASC").Offset(offset).Limit(limit).Scan(&rows).Error; err != nil {
 		return nil, 0, err
 	}
-	return modelsToDeliveryJobs(models), total, nil
+
+	jobs := make([]*delivery.DeliveryJob, 0, len(rows))
+	for _, row := range rows {
+		m := row.DeliveryJobModel
+		job := modelToDeliveryJob(&m)
+		job.StoreName = row.StoreName
+		jobs = append(jobs, job)
+	}
+	return jobs, total, nil
 }
 
 func (r *deliveryRepository) ListByDriver(ctx context.Context, driverID string, page, limit int) ([]*delivery.DeliveryJob, int64, error) {

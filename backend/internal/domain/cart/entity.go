@@ -27,9 +27,11 @@ func (c *Cart) BelongsToStore(storeID string) bool {
 
 // ProductSnapshot holds display fields joined from the products table.
 type ProductSnapshot struct {
-	Name  string
-	Price int64
-	Stock int
+	Name      string
+	Price     int64
+	Stock     int
+	StoreID   string
+	StoreName string
 }
 
 // CartItem is a single line entry in a cart.

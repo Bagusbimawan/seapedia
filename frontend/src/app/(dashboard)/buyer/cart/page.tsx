@@ -76,6 +76,9 @@ export default function BuyerCartPage() {
                         <p className="truncate font-semibold text-slate-900">
                           {item.name}
                         </p>
+                        {item.store_name && (
+                          <p className="text-xs text-slate-500">{item.store_name}</p>
+                        )}
                         <p className="text-sm font-medium text-ocean-600">
                           {formatRupiah(item.price)} / item
                         </p>

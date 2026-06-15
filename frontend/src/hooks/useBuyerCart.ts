@@ -14,6 +14,8 @@ export interface CartLineItem {
   name: string
   price: number
   stock: number
+  store_id?: string
+  store_name?: string
   lineTotal: number
 }
 
@@ -25,6 +27,8 @@ function toLineItem(item: CartItem): CartLineItem {
     name: item.name ?? item.product_id,
     price,
     stock: item.stock ?? 0,
+    store_id: item.store_id,
+    store_name: item.store_name,
     lineTotal: price * item.quantity,
   }
 }

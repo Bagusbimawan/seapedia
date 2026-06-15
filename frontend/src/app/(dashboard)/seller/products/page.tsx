@@ -15,6 +15,7 @@ import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
 import type { Product } from '@/types'
 import Input from '@/components/ui/Input'
+import CurrencyInput from '@/components/ui/CurrencyInput'
 import Modal from '@/components/ui/Modal'
 
 const emptyForm = { name: '', description: '', price: 0, stock: 0 }
@@ -87,7 +88,7 @@ export default function SellerProductsPage() {
         <div className="flex flex-col gap-3">
           <Input label="Nama" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input label="Deskripsi" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <Input label="Harga (Rp)" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
+          <CurrencyInput label="Harga (Rp)" value={form.price} onChange={(price) => setForm({ ...form, price })} />
           <Input label="Stok" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Button onClick={handleSubmit} isLoading={loading}>Simpan</Button>

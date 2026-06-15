@@ -10,6 +10,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import { OrderListItem, LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { sellerOrders, markReady } from '@/lib/api/orders'
+import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
 import { SELLER_NAV } from '@/lib/nav'
@@ -19,6 +20,7 @@ export default function SellerOrdersPage() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const ordersKey = useScopedQueryKey('seller-orders', page)
 
   const { data, isLoading } = useQuery({
@@ -28,14 +30,20 @@ export default function SellerOrdersPage() {
 
   const handleReady = async (id: string) => {
     setLoadingId(id)
+    setError(null)
     try {
       await markReady(id)
       await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('seller-orders') })
+    } catch (err: unknown) {
+      setError(getApiError(err, 'Gagal menandai pesanan siap kirim.'))
     } finally { setLoadingId(null) }
   }
 
   return (
     <DashboardLayout title="Pesanan Masuk" subtitle="Kelola dan proses pesanan pelanggan" navItems={SELLER_NAV} role="SELLER">
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+      )}
       {isLoading ? (
         <LoadingSkeleton rows={4} />
       ) : !data?.items?.length ? (

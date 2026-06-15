@@ -91,6 +91,8 @@ func (r *cartRepository) GetItemsWithProducts(ctx context.Context, cartID string
 		ProductName  string `gorm:"column:product_name"`
 		ProductPrice int64  `gorm:"column:product_price"`
 		ProductStock int    `gorm:"column:product_stock"`
+		StoreID      string `gorm:"column:store_id"`
+		StoreName    string `gorm:"column:store_name"`
 	}
 
 	var rows []row
@@ -98,8 +100,10 @@ func (r *cartRepository) GetItemsWithProducts(ctx context.Context, cartID string
 		Table("cart_items").
 		Select(`cart_items.id, cart_items.cart_id, cart_items.product_id, cart_items.quantity,
 			cart_items.created_at, cart_items.updated_at,
-			products.name AS product_name, products.price AS product_price, products.stock AS product_stock`).
+			products.name AS product_name, products.price AS product_price, products.stock AS product_stock,
+			products.store_id AS store_id, stores.name AS store_name`).
 		Joins("JOIN products ON products.id = cart_items.product_id").
+		Joins("JOIN stores ON stores.id = products.store_id").
 		Where("cart_items.cart_id = ?", cartID).
 		Scan(&rows).Error
 	if err != nil {
@@ -115,9 +119,11 @@ func (r *cartRepository) GetItemsWithProducts(ctx context.Context, cartID string
 			ProductID: mc.ProductID,
 			Quantity:  mc.Quantity,
 			Product: &cart.ProductSnapshot{
-				Name:  row.ProductName,
-				Price: row.ProductPrice,
-				Stock: row.ProductStock,
+				Name:      row.ProductName,
+				Price:     row.ProductPrice,
+				Stock:     row.ProductStock,
+				StoreID:   row.StoreID,
+				StoreName: row.StoreName,
 			},
 			CreatedAt: mc.CreatedAt,
 			UpdatedAt: mc.UpdatedAt,

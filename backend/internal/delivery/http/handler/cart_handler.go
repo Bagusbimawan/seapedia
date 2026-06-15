@@ -138,7 +138,7 @@ func (h *CheckoutHandler) Checkout(c *fiber.Ctx) error {
 	if err != nil {
 		return HandleErr(c, err)
 	}
-	return response.Created(c, dto.ToOrderResponse(o))
+	return response.Created(c, dto.ToCheckoutResponse(o))
 }
 
 // OrderHandler handles order endpoints.

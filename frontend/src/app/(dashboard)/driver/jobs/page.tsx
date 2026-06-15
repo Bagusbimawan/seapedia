@@ -45,8 +45,8 @@ export default function DriverJobsPage() {
         <div className="text-sm text-blue-800">
           <p className="font-semibold">Alur Driver</p>
           <p className="mt-1 text-blue-700">
-            Pekerjaan baru muncul setelah <strong>seller menekan &quot;Siap Kirim&quot;</strong> pada pesanan yang sudah dikemas.
-            Jika belum ada pekerjaan, tunggu buyer checkout dan seller selesai memproses pesanan terlebih dahulu.
+            Driver bisa mengambil pekerjaan dari <strong>semua toko</strong> — tidak ada batasan toko.
+            Pekerjaan muncul setelah <strong>seller menekan &quot;Siap Kirim&quot;</strong> pada pesanan yang sudah dikemas.
           </p>
         </div>
       </div>
@@ -73,6 +73,9 @@ export default function DriverJobsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-mono text-xs text-slate-400">Order: {job.order_id.slice(0, 8)}...</p>
+                  {job.store_name && (
+                    <p className="mt-1 text-sm font-semibold text-slate-800">{job.store_name}</p>
+                  )}
                   <p className="mt-1 text-lg font-bold text-emerald-600">+{formatRupiah(job.earning_amount)}</p>
                   <p className="text-xs text-slate-400">{formatDate(job.created_at)}</p>
                   <p className="mt-1 text-xs font-medium text-emerald-700">Siap diambil — seller sudah selesai mengemas</p>

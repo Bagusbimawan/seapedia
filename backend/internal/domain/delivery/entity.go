@@ -8,6 +8,7 @@ type DeliveryJob struct {
 	OrderID       string
 	DriverUserID  *string
 	EarningAmount int64
+	StoreName     string // populated when listing available jobs
 	TakenAt       *time.Time
 	CompletedAt   *time.Time
 	CreatedAt     time.Time

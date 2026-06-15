@@ -1,5 +1,5 @@
 import client from './client'
-import type { ApiResponse, CheckoutRequest, Order, OrderStatus, PaginatedData, SellerIncome } from '@/types'
+import type { ApiResponse, CheckoutRequest, CheckoutResponse, Order, OrderStatus, PaginatedData, SellerIncome } from '@/types'
 
 export interface OrderListParams {
   status?: OrderStatus
@@ -9,7 +9,7 @@ export interface OrderListParams {
 
 // Buyer endpoints
 export const checkout = (data: CheckoutRequest) =>
-  client.post<ApiResponse<Order>>('/buyer/checkout', data)
+  client.post<ApiResponse<CheckoutResponse>>('/buyer/checkout', data)
 
 export const buyerOrders = (params?: OrderListParams) =>
   client.get<ApiResponse<PaginatedData<Order>>>('/buyer/orders', { params })
