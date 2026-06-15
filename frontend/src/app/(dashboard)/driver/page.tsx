@@ -1,27 +1,21 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Truck, History } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import StatCard from '@/components/ui/StatCard'
 import Button from '@/components/ui/Button'
-import { listAvailableJobs } from '@/lib/api/delivery'
-import { useAuth } from '@/hooks/useAuth'
-import { useScopedQueryKey } from '@/lib/queryKeys'
-import { cachedQueryOptions } from '@/lib/queryConfig'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useDriverStore } from '@/stores/useDriverStore'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverDashboardPage() {
-  const { isReady } = useAuth()
-  const jobsKey = useScopedQueryKey('driver-jobs-count')
+  const jobs = useDriverStore((s) => s.jobs)
+  const fetchJobs = useDriverStore((s) => s.fetchJobs)
 
-  const { data: jobs } = useQuery({
-    queryKey: jobsKey,
-    queryFn: async () => (await listAvailableJobs({ limit: 1 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchJobs({ limit: 1 })
+  }, [])
 
   return (
     <DashboardLayout title="Dashboard Driver" subtitle="Kelola pekerjaan pengiriman" navItems={DRIVER_NAV} role="DRIVER">

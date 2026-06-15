@@ -1,6 +1,5 @@
 'use client'
 
-import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ShoppingCart, Trash2 } from 'lucide-react'
@@ -12,26 +11,22 @@ import QuantityStepper from '@/components/ui/QuantityStepper'
 import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton, SummaryRow } from '@/components/ui/ListHelpers'
 import { updateItem, removeItem, clearCart } from '@/lib/api/cart'
-import { refreshBuyerCartCache, syncBuyerCartCache } from '@/lib/cartCache'
 import { useBuyerCart } from '@/hooks/useBuyerCart'
 import { formatRupiah } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
 
 export default function BuyerCartPage() {
   const router = useRouter()
-  const queryClient = useQueryClient()
-  const { lineItems, subtotal, isLoading, isEmpty, isReady, isError, clearCartCache } = useBuyerCart()
-
-  const refresh = () => refreshBuyerCartCache(queryClient)
+  const { lineItems, subtotal, isLoading, isEmpty, isReady, isError, clearCartCache, refreshCart, syncCart } = useBuyerCart()
 
   const handleUpdate = async (productId: string, qty: number) => {
     const res = await updateItem(productId, { quantity: qty })
-    syncBuyerCartCache(queryClient, res.data.data)
+    syncCart(res.data.data ?? null)
   }
 
   const handleRemove = async (productId: string) => {
     const res = await removeItem(productId)
-    syncBuyerCartCache(queryClient, res.data.data)
+    syncCart(res.data.data ?? null)
   }
 
   const handleClear = async () => {
@@ -49,7 +44,7 @@ export default function BuyerCartPage() {
           icon={ShoppingCart}
           title="Gagal memuat keranjang"
           description="Silakan logout lalu login ulang sebagai buyer, atau coba refresh halaman."
-          action={<Button variant="primary" onClick={() => refresh()}>Coba Lagi</Button>}
+          action={<Button variant="primary" onClick={() => refreshCart()}>Coba Lagi</Button>}
         />
       ) : isEmpty ? (
         <EmptyState

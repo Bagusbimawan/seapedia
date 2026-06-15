@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { getQueryClient } from '@/lib/queryClient'
+import { resetAllStores } from '@/stores/resetStores'
 import type { Role, User } from '@/types'
 
 const COOKIE_OPTS = { expires: 7, sameSite: 'lax' as const, path: '/' }
@@ -41,6 +41,10 @@ function clearAuthCookies() {
   Cookies.remove('seapedia-role', { path: '/' })
 }
 
+function resetClientStores() {
+  resetAllStores()
+}
+
 export async function fetchMeWithToken(token: string): Promise<User> {
   const baseURL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1'
   const res = await fetch(`${baseURL}/auth/me`, {
@@ -52,12 +56,6 @@ export async function fetchMeWithToken(token: string): Promise<User> {
   if (!res.ok) throw new Error('Failed to fetch user')
   const body = await res.json()
   return body.data as User
-}
-
-function purgeQueryCache() {
-  const qc = getQueryClient()
-  qc.clear()
-  qc.removeQueries()
 }
 
 export function establishSession(
@@ -74,21 +72,20 @@ export function establishSession(
   setAuthCookies(token, activeRole)
 
   if (options?.forceClear || prevUserId !== nextUserId || prevToken !== token) {
-    purgeQueryCache()
+    resetClientStores()
   }
 }
 
 export function updateActiveRole(token: string, role: Role) {
   useAuthStore.getState().setActiveRole(token, role)
   setAuthCookies(token, role)
-  purgeQueryCache()
+  resetClientStores()
 }
 
-/** Clear auth + all cached API data. Hard redirect ensures UI resets completely. */
 export function clearSession(options?: { redirect?: boolean }) {
   useAuthStore.getState().clearAuth()
   clearAuthCookies()
-  purgeQueryCache()
+  resetClientStores()
 
   if (options?.redirect !== false && typeof window !== 'undefined') {
     window.location.href = '/login'
@@ -108,7 +105,7 @@ export async function logoutAndRedirect() {
         },
       })
     } catch {
-      // Tetap logout lokal meski API gagal
+      // Tetap logout lokal
     }
   }
   clearSession({ redirect: true })

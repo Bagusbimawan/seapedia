@@ -1,37 +1,32 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card from '@/components/ui/Card'
 import { OrderStatusBadge } from '@/components/ui/Badge'
-import { listOrders } from '@/lib/api/admin'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useAdminStore } from '@/stores/useAdminStore'
 import { ADMIN_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
 
 export default function AdminOrdersPage() {
-  const { isReady } = useAuth()
-  const ordersKey = useScopedQueryKey('admin-orders-list')
+  const orders = useAdminStore((s) => s.orders)
+  const ordersLoading = useAdminStore((s) => s.ordersLoading)
+  const fetchOrders = useAdminStore((s) => s.fetchOrders)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ordersKey,
-    queryFn: async () => (await listOrders({ limit: 50 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchOrders({ limit: 50 })
+  }, [])
 
   return (
     <DashboardLayout title="Pesanan" navItems={ADMIN_NAV} role="ADMIN">
-      {isLoading ? (
+      {ordersLoading && !orders ? (
         <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
-      ) : !data?.items?.length ? (
+      ) : !orders?.items?.length ? (
         <Card><p className="text-sm text-slate-500">Belum ada pesanan.</p></Card>
       ) : (
         <div className="flex flex-col gap-2">
-          {data.items.map((order) => (
+          {orders.items.map((order) => (
             <Card key={order.id}>
               <div className="flex items-center justify-between">
                 <div>

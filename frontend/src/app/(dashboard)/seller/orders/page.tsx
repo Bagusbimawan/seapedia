@@ -2,59 +2,41 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Package } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import { OrderListItem, LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { OrderStatusBadge } from '@/components/ui/Badge'
-import { sellerOrders, markReady } from '@/lib/api/orders'
+import { markReady } from '@/lib/api/orders'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useSellerStore } from '@/stores/useSellerStore'
 import { SELLER_NAV } from '@/lib/nav'
-import type { Order, OrderStatus, PaginatedData } from '@/types'
+import type { OrderStatus } from '@/types'
 
 export default function SellerOrdersPage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
   const [page] = useState(1)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const ordersKey = useScopedQueryKey('seller-orders', page)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ordersKey,
-    queryFn: async () => (await sellerOrders({ page, limit: 10 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  const orders = useSellerStore((s) => s.orders)
+  const ordersLoading = useSellerStore((s) => s.ordersLoading)
+  const fetchOrders = useSellerStore((s) => s.fetchOrders)
+
+  useFetchOnAuth(() => {
+    void fetchOrders({ page, limit: 10 })
+  }, [page])
 
   const handleReady = async (id: string) => {
     setLoadingId(id)
     setError(null)
     setSuccess(null)
     try {
-      const res = await markReady(id)
-      const updated = res.data.data as Order | undefined
-
-      queryClient.setQueryData(ordersKey, (old: PaginatedData<Order> | undefined) => {
-        if (!old?.items) return old
-        return {
-          ...old,
-          items: old.items.map((order) =>
-            order.id === id
-              ? { ...order, status: (updated?.status ?? 'MENUNGGU_PENGIRIM') as OrderStatus }
-              : order
-          ),
-        }
-      })
-
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('seller-orders') })
+      await markReady(id)
+      await fetchOrders({ page, limit: 10 })
       setSuccess('Pesanan siap diantar! Driver dapat mengambil pekerjaan ini di panel Driver.')
       setTimeout(() => setSuccess(null), 5000)
     } catch (err: unknown) {
@@ -75,13 +57,13 @@ export default function SellerOrdersPage() {
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
       )}
-      {isLoading ? (
+      {ordersLoading && !orders ? (
         <LoadingSkeleton rows={4} />
-      ) : !data?.items?.length ? (
+      ) : !orders?.items?.length ? (
         <EmptyState icon={Package} title="Belum ada pesanan" description="Pesanan dari pembeli akan muncul di sini" />
       ) : (
         <div className="flex flex-col gap-3">
-          {data.items.map((order) => (
+          {orders.items.map((order) => (
             <OrderListItem
               key={order.id}
               id={order.id}

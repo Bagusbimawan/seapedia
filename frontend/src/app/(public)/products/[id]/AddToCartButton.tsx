@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
 import { ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { addItem } from '@/lib/api/cart'
-import { syncBuyerCartCache } from '@/lib/cartCache'
+import { useCartStore } from '@/stores/useCartStore'
 import { getApiError } from '@/lib/apiError'
 import Button from '@/components/ui/Button'
 import QuantityStepper from '@/components/ui/QuantityStepper'
@@ -19,7 +18,7 @@ interface AddToCartButtonProps {
 export default function AddToCartButton({ productId, stock }: AddToCartButtonProps) {
   const { isAuthenticated, activeRole } = useAuth()
   const router = useRouter()
-  const queryClient = useQueryClient()
+  const setCart = useCartStore((s) => s.setCart)
   const [qty, setQty] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +37,7 @@ export default function AddToCartButton({ productId, stock }: AddToCartButtonPro
     setLoading(true)
     try {
       const res = await addItem({ product_id: productId, quantity: qty })
-      syncBuyerCartCache(queryClient, res.data.data)
+      setCart(res.data.data ?? null)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err: unknown) {

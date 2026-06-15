@@ -1,17 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
-import { listStores, adminCreateSeller } from '@/lib/api/admin'
+import { adminCreateSeller } from '@/lib/api/admin'
 import { formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useAdminStore } from '@/stores/useAdminStore'
 import { ADMIN_NAV } from '@/lib/nav'
 import type { Store } from '@/types'
 
@@ -22,9 +20,9 @@ function provisionLabel(by?: string) {
 }
 
 export default function AdminStoresPage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
-  const storesKey = useScopedQueryKey('admin-stores-list')
+  const stores = useAdminStore((s) => s.stores)
+  const storesLoading = useAdminStore((s) => s.storesLoading)
+  const fetchStores = useAdminStore((s) => s.fetchStores)
 
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -35,20 +33,17 @@ export default function AdminStoresPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
-    queryKey: storesKey,
-    queryFn: async () => (await listStores({ limit: 50 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchStores({ limit: 50 })
+  }, [])
 
   const { adminStores, otherStores } = useMemo(() => {
-    const items = data?.items ?? []
+    const items = stores?.items ?? []
     return {
       adminStores: items.filter((s) => s.provisioned_by === 'admin' || s.provisioned_by === 'seed'),
       otherStores: items.filter((s) => s.provisioned_by !== 'admin' && s.provisioned_by !== 'seed'),
     }
-  }, [data?.items])
+  }, [stores?.items])
 
   const handleCreate = async () => {
     if (!username.trim() || !email.trim() || !password || !storeName.trim()) {
@@ -67,9 +62,7 @@ export default function AdminStoresPage() {
         description: description.trim(),
       })
       const created = res.data.data
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('admin-stores-list') })
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('admin-stores') })
-      queryClient.invalidateQueries({ queryKey: ['demo-sellers'] })
+      await fetchStores({ limit: 50 })
 
       setSuccess(
         `Seller dibuat! ${created?.user.email} / ${created?.demo_password} — sudah muncul di panel login`
@@ -124,7 +117,7 @@ export default function AdminStoresPage() {
           <Card>
             <CardHeader><CardTitle>Toko di Panel Login</CardTitle></CardHeader>
             <p className="mb-3 text-xs text-slate-400">Seed seller@ + seller yang dibuat admin.</p>
-            {isLoading ? (
+            {storesLoading && !stores ? (
               <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
             ) : adminStores.length === 0 ? (
               <p className="text-sm text-slate-500">Belum ada — buat seller baru di form kiri.</p>

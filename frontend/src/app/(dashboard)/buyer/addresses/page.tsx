@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MapPin } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card from '@/components/ui/Card'
@@ -11,29 +10,28 @@ import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
-import { listAddresses, createAddress, updateAddress, deleteAddress, setDefaultAddress } from '@/lib/api/addresses'
-import { useAuth } from '@/hooks/useAuth'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { createAddress, updateAddress, deleteAddress, setDefaultAddress } from '@/lib/api/addresses'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useBuyerStore } from '@/stores/useBuyerStore'
 import type { Address } from '@/types'
 import { BUYER_NAV } from '@/lib/nav'
 
 const emptyForm = { label: '', street: '', city: '', zip_code: '', is_default: false }
 
 export default function BuyerAddressesPage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
+  const addresses = useBuyerStore((s) => s.addresses)
+  const addressesLoading = useBuyerStore((s) => s.addressesLoading)
+  const fetchAddresses = useBuyerStore((s) => s.fetchAddresses)
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Address | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const addressesKey = useScopedQueryKey('buyer-addresses')
 
-  const { data: addresses, isLoading } = useQuery({
-    queryKey: addressesKey,
-    queryFn: async () => (await listAddresses()).data.data ?? [],
-    enabled: isReady,
-  })
+  useFetchOnAuth(() => {
+    void fetchAddresses()
+  }, [])
 
   const openCreate = () => {
     setEditing(null)
@@ -58,7 +56,7 @@ export default function BuyerAddressesPage() {
       } else {
         await createAddress(form)
       }
-      await queryClient.invalidateQueries({ queryKey: addressesKey })
+      await fetchAddresses()
       setModalOpen(false)
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Gagal menyimpan alamat')
@@ -70,12 +68,12 @@ export default function BuyerAddressesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Hapus alamat ini?')) return
     await deleteAddress(id)
-    await queryClient.invalidateQueries({ queryKey: addressesKey })
+    await fetchAddresses()
   }
 
   const handleSetDefault = async (id: string) => {
     await setDefaultAddress(id)
-    await queryClient.invalidateQueries({ queryKey: addressesKey })
+    await fetchAddresses()
   }
 
   return (
@@ -84,9 +82,9 @@ export default function BuyerAddressesPage() {
         <Button onClick={openCreate}>Tambah Alamat</Button>
       </div>
 
-      {isLoading ? (
+      {addressesLoading && !addresses.length ? (
         <LoadingSkeleton rows={2} />
-      ) : !addresses?.length ? (
+      ) : !addresses.length ? (
         <EmptyState
           icon={MapPin}
           title="Belum ada alamat"

@@ -1,16 +1,13 @@
 'use client'
 
 import { use } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import { OrderStatusBadge } from '@/components/ui/Badge'
-import { sellerOrderById } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useSellerStore } from '@/stores/useSellerStore'
 import { SELLER_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
 
@@ -18,19 +15,18 @@ interface Props { params: Promise<{ id: string }> }
 
 export default function SellerOrderDetailPage({ params }: Props) {
   const { id } = use(params)
-  const { isReady } = useAuth()
-  const orderKey = useScopedQueryKey('seller-order', id)
-  const { data: order, isLoading } = useQuery({
-    queryKey: orderKey,
-    queryFn: async () => (await sellerOrderById(id)).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  const order = useSellerStore((s) => s.orderDetail)
+  const orderDetailLoading = useSellerStore((s) => s.orderDetailLoading)
+  const fetchOrderDetail = useSellerStore((s) => s.fetchOrderDetail)
+
+  useFetchOnAuth(() => {
+    void fetchOrderDetail(id)
+  }, [id])
 
   return (
     <DashboardLayout title="Detail Pesanan" navItems={SELLER_NAV} role="SELLER">
       <Link href="/seller/orders" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ocean-600 hover:text-ocean-700">← Kembali</Link>
-      {isLoading ? (
+      {orderDetailLoading && !order ? (
         <div className="h-48 animate-pulse rounded-2xl bg-slate-200" />
       ) : !order ? (
         <Card><p className="text-sm text-slate-500">Pesanan tidak ditemukan.</p></Card>

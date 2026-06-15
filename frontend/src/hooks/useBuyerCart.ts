@@ -1,14 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getCart } from '@/lib/api/cart'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { refreshBuyerCartCache, syncBuyerCartCache } from '@/lib/cartCache'
-import { shouldShowQuerySkeleton } from '@/lib/queryLoading'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useEffect, useMemo } from 'react'
+import { useCartStore } from '@/stores/useCartStore'
 import { useAuthStore } from '@/stores/useAuthStore'
-import type { Cart, CartItem } from '@/types'
+import type { CartItem } from '@/types'
 
 export interface CartLineItem {
   product_id: string
@@ -36,52 +31,46 @@ function toLineItem(item: CartItem): CartLineItem {
 }
 
 export function useBuyerCart() {
-  const queryClient = useQueryClient()
-  const hasHydrated = useAuthStore((s) => s.hasHydrated)
   const authReady = useAuthStore((s) => s.hasHydrated && !!s.token)
-  const cartKey = useScopedQueryKey('buyer-cart')
+  const cart = useCartStore((s) => s.cart)
+  const isLoading = useCartStore((s) => s.isLoading)
+  const isError = useCartStore((s) => s.isError)
+  const fetchCart = useCartStore((s) => s.fetchCart)
+  const setCart = useCartStore((s) => s.setCart)
+  const resetCart = useCartStore((s) => s.reset)
 
-  const cartQuery = useQuery({
-    queryKey: cartKey,
-    queryFn: async () => (await getCart()).data.data as Cart | undefined,
-    enabled: authReady,
-    ...cachedQueryOptions,
-  })
+  useEffect(() => {
+    if (authReady) {
+      void fetchCart()
+    } else {
+      resetCart()
+    }
+  }, [authReady, fetchCart, resetCart])
 
   const lineItems: CartLineItem[] = useMemo(() => {
-    if (!cartQuery.data?.items?.length) return []
-    return cartQuery.data.items.map(toLineItem)
-  }, [cartQuery.data?.items])
+    if (!cart?.items?.length) return []
+    return cart.items.map(toLineItem)
+  }, [cart?.items])
 
   const subtotal = useMemo(
     () => lineItems.reduce((sum, item) => sum + item.lineTotal, 0),
     [lineItems]
   )
 
-  const clearCartCache = () => {
-    queryClient.setQueryData(cartKey, { id: '', user_id: '', items: [] } satisfies Cart)
-    void refreshBuyerCartCache(queryClient)
-  }
-
-  const refreshCart = async () => {
-    await refreshBuyerCartCache(queryClient)
-  }
-
   const hasItems = lineItems.length > 0
-  const isLoading = !hasHydrated || shouldShowQuerySkeleton(authReady, cartQuery)
+  const showLoading = authReady && isLoading && !cart
 
   return {
-    cart: cartQuery.data,
+    cart: cart ?? undefined,
     lineItems,
     subtotal,
-    isLoading,
-    isFetching: cartQuery.isFetching,
-    isEmpty: authReady && !isLoading && !cartQuery.isError && !hasItems,
+    isLoading: showLoading,
+    isFetching: isLoading,
+    isEmpty: authReady && !showLoading && !isError && !hasItems,
     isReady: hasItems,
-    isError: cartQuery.isError,
-    error: cartQuery.error,
-    clearCartCache,
-    refreshCart,
-    syncCart: (cart: Cart | undefined) => syncBuyerCartCache(queryClient, cart),
+    isError,
+    clearCartCache: () => setCart({ id: '', user_id: '', items: [] }),
+    refreshCart: fetchCart,
+    syncCart: (next: Parameters<typeof setCart>[0]) => setCart(next ?? null),
   }
 }

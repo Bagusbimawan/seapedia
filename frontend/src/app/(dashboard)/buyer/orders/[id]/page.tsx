@@ -1,18 +1,15 @@
 'use client'
 
 import { use } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import { OrderStatusBadge } from '@/components/ui/Badge'
 import { LoadingSkeleton, SummaryRow } from '@/components/ui/ListHelpers'
-import { buyerOrderById } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useBuyerStore } from '@/stores/useBuyerStore'
 import { BUYER_NAV } from '@/lib/nav'
 import type { OrderStatus } from '@/types'
 
@@ -20,22 +17,20 @@ interface Props { params: Promise<{ id: string }> }
 
 export default function BuyerOrderDetailPage({ params }: Props) {
   const { id } = use(params)
-  const { isReady } = useAuth()
-  const orderKey = useScopedQueryKey('buyer-order', id)
+  const order = useBuyerStore((s) => s.orderDetail)
+  const orderDetailLoading = useBuyerStore((s) => s.orderDetailLoading)
+  const fetchOrderDetail = useBuyerStore((s) => s.fetchOrderDetail)
 
-  const { data: order, isLoading } = useQuery({
-    queryKey: orderKey,
-    queryFn: async () => (await buyerOrderById(id)).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchOrderDetail(id)
+  }, [id])
 
   return (
     <DashboardLayout title="Detail Pesanan" navItems={BUYER_NAV} role="BUYER">
       <Link href="/buyer/orders" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ocean-600 hover:text-ocean-700">
         <ArrowLeft className="h-4 w-4" /> Kembali ke Pesanan
       </Link>
-      {isLoading ? (
+      {orderDetailLoading && !order ? (
         <LoadingSkeleton rows={2} />
       ) : !order ? (
         <Card><p className="text-sm text-slate-500">Pesanan tidak ditemukan.</p></Card>

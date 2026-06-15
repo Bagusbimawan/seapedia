@@ -1,6 +1,5 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Wallet, ShoppingCart, Package, Store } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
@@ -10,48 +9,31 @@ import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import { OrderListItem } from '@/components/ui/ListHelpers'
 import { OrderStatusBadge } from '@/components/ui/Badge'
-import { getBalance } from '@/lib/api/wallet'
-import { getCart } from '@/lib/api/cart'
-import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { shouldShowQuerySkeleton } from '@/lib/queryLoading'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useBuyerStore } from '@/stores/useBuyerStore'
+import { useCartStore } from '@/stores/useCartStore'
 import { BUYER_NAV } from '@/lib/nav'
-import type { OrderStatus, PaginatedData, Order } from '@/types'
+import type { OrderStatus } from '@/types'
 
 export default function BuyerDashboardPage() {
-  const { isReady } = useAuth()
-  const walletKey = useScopedQueryKey('buyer-wallet')
-  const cartKey = useScopedQueryKey('buyer-cart')
-  const ordersKey = useScopedQueryKey('buyer-orders-summary')
+  const wallet = useBuyerStore((s) => s.wallet)
+  const orders = useBuyerStore((s) => s.orders)
+  const ordersLoading = useBuyerStore((s) => s.ordersLoading)
+  const ordersError = useBuyerStore((s) => s.ordersError)
+  const fetchWallet = useBuyerStore((s) => s.fetchWallet)
+  const fetchOrders = useBuyerStore((s) => s.fetchOrders)
+  const cart = useCartStore((s) => s.cart)
+  const fetchCart = useCartStore((s) => s.fetchCart)
 
-  const { data: wallet } = useQuery({
-    queryKey: walletKey,
-    queryFn: async () => (await getBalance()).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
-  const { data: cart } = useQuery({
-    queryKey: cartKey,
-    queryFn: async () => (await getCart()).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
-  const { data: orders, isLoading: ordersLoading, isError: ordersError } = useQuery({
-    queryKey: ordersKey,
-    queryFn: async () => (await buyerOrders({ limit: 5 })).data.data as PaginatedData<Order> | undefined,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchWallet()
+    void fetchCart()
+    void fetchOrders({ limit: 5 })
+  }, [])
 
   const orderItems = orders?.items ?? []
-  const showOrdersLoading = shouldShowQuerySkeleton(isReady, {
-    isLoading: ordersLoading,
-    isError: ordersError,
-    data: orders,
-  })
+  const showOrdersLoading = ordersLoading && !orders
 
   return (
     <DashboardLayout

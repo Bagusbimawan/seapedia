@@ -1,14 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { Search, ChevronLeft, ChevronRight, Fish } from 'lucide-react'
-import { listProducts } from '@/lib/api/products'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import PageHeader from '@/components/ui/PageHeader'
 import ProductCard from '@/components/ui/ProductCard'
 import EmptyState from '@/components/ui/EmptyState'
+import { usePublicStore } from '@/stores/usePublicStore'
 
 const LIMIT = 12
 
@@ -17,12 +16,16 @@ export default function ProductsPage() {
   const [searchInput, setSearchInput] = useState('')
   const [page, setPage] = useState(1)
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['products', search, page],
-    queryFn: async () => (await listProducts({ search, page, limit: LIMIT })).data.data,
-  })
+  const products = usePublicStore((s) => s.products)
+  const productsLoading = usePublicStore((s) => s.productsLoading)
+  const productsError = usePublicStore((s) => s.productsError)
+  const fetchProducts = usePublicStore((s) => s.fetchProducts)
 
-  const totalPages = data ? Math.ceil(data.total / LIMIT) : 1
+  useEffect(() => {
+    void fetchProducts({ search, page, limit: LIMIT })
+  }, [search, page, fetchProducts])
+
+  const totalPages = products ? Math.ceil(products.total / LIMIT) : 1
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +54,7 @@ export default function ProductsPage() {
         </Button>
       </form>
 
-      {isLoading && (
+      {productsLoading && !products && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-64 animate-pulse rounded-2xl bg-slate-200" />
@@ -59,11 +62,11 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {isError && (
+      {productsError && (
         <EmptyState icon={Fish} title="Gagal memuat produk" description="Pastikan backend sedang berjalan di localhost:8080" />
       )}
 
-      {!isLoading && !isError && (!data?.items || data.items.length === 0) && (
+      {!productsLoading && !productsError && (!products?.items || products.items.length === 0) && (
         <EmptyState
           icon={Fish}
           title={search ? `Tidak ada hasil untuk "${search}"` : 'Belum ada produk'}
@@ -71,11 +74,11 @@ export default function ProductsPage() {
         />
       )}
 
-      {!isLoading && !isError && data?.items && data.items.length > 0 && (
+      {!productsLoading && !productsError && products?.items && products.items.length > 0 && (
         <>
-          <p className="mb-4 text-sm text-slate-500">{data.total} produk ditemukan</p>
+          <p className="mb-4 text-sm text-slate-500">{products.total} produk ditemukan</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {data.items.map((product) => (
+            {products.items.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

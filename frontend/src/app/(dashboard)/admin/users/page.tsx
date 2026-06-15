@@ -1,29 +1,24 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { RoleBadge } from '@/components/ui/Badge'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
-import { listUsers } from '@/lib/api/admin'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useAdminStore } from '@/stores/useAdminStore'
 import { ADMIN_NAV } from '@/lib/nav'
 
 export default function AdminUsersPage() {
-  const { isReady } = useAuth()
-  const usersKey = useScopedQueryKey('admin-users-list')
+  const users = useAdminStore((s) => s.users)
+  const usersLoading = useAdminStore((s) => s.usersLoading)
+  const fetchUsers = useAdminStore((s) => s.fetchUsers)
 
-  const { data, isLoading } = useQuery({
-    queryKey: usersKey,
-    queryFn: async () => (await listUsers({ limit: 50 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchUsers({ limit: 50 })
+  }, [])
 
   return (
     <DashboardLayout title="Pengguna" subtitle="Semua pengguna terdaftar di platform" navItems={ADMIN_NAV} role="ADMIN">
-      {isLoading ? (
+      {usersLoading && !users ? (
         <LoadingSkeleton rows={4} />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
@@ -32,7 +27,7 @@ export default function AdminUsersPage() {
               <tr><th className="px-5 py-3">Username</th><th className="px-5 py-3">Email</th><th className="px-5 py-3">Roles</th></tr>
             </thead>
             <tbody>
-              {data?.items?.map((u) => (
+              {users?.items?.map((u) => (
                 <tr key={u.id} className="border-b border-slate-50 transition-colors hover:bg-slate-50">
                   <td className="px-5 py-3.5 font-medium text-slate-900">{u.username}</td>
                   <td className="px-5 py-3.5 text-slate-500">{u.email}</td>

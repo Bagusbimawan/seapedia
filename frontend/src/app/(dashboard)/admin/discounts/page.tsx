@@ -1,16 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
-import { listVouchers, listPromos, adminCreateVoucher, adminCreatePromo } from '@/lib/api/discounts'
+import { adminCreateVoucher, adminCreatePromo } from '@/lib/api/discounts'
 import { advanceDay } from '@/lib/api/admin'
 import { formatDate } from '@/lib/format'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useAdminStore } from '@/stores/useAdminStore'
 import { ADMIN_NAV } from '@/lib/nav'
 import type { DiscountType } from '@/types'
 
@@ -19,7 +19,11 @@ function toExpiryISO(date: string): string {
 }
 
 export default function AdminDiscountsPage() {
-  const queryClient = useQueryClient()
+  const vouchers = useAdminStore((s) => s.vouchers)
+  const promos = useAdminStore((s) => s.promos)
+  const fetchVouchers = useAdminStore((s) => s.fetchVouchers)
+  const fetchPromos = useAdminStore((s) => s.fetchPromos)
+
   const [tab, setTab] = useState<'voucher' | 'promo'>('voucher')
   const [code, setCode] = useState('')
   const [discountType, setDiscountType] = useState<DiscountType>('PERCENT')
@@ -30,11 +34,11 @@ export default function AdminDiscountsPage() {
   const [clockLoading, setClockLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [clockMsg, setClockMsg] = useState<string | null>(null)
-  const vouchersKey = useScopedQueryKey('vouchers')
-  const promosKey = useScopedQueryKey('promos')
 
-  const { data: vouchers } = useQuery({ queryKey: vouchersKey, queryFn: async () => (await listVouchers({ limit: 20 })).data.data })
-  const { data: promos } = useQuery({ queryKey: promosKey, queryFn: async () => (await listPromos({ limit: 20 })).data.data })
+  useFetchOnAuth(() => {
+    void fetchVouchers()
+    void fetchPromos()
+  }, [])
 
   const handleCreate = async () => {
     setLoading(true)
@@ -43,10 +47,10 @@ export default function AdminDiscountsPage() {
       const expiry = toExpiryISO(expiryDate)
       if (tab === 'voucher') {
         await adminCreateVoucher({ code, discount_type: discountType, discount_value: value, expiry_date: expiry, remaining_usage: usage })
-        await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('vouchers') })
+        await fetchVouchers()
       } else {
         await adminCreatePromo({ code, discount_type: discountType, discount_value: value, expiry_date: expiry })
-        await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('promos') })
+        await fetchPromos()
       }
       setCode('')
     } catch (err: unknown) {

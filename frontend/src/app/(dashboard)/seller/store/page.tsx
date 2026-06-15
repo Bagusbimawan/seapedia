@@ -1,37 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { sellerGetStore, sellerCreateStore, sellerUpdateStore } from '@/lib/api/stores'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { sellerCreateStore, sellerUpdateStore } from '@/lib/api/stores'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useSellerStore } from '@/stores/useSellerStore'
 import { SELLER_NAV } from '@/lib/nav'
 
 export default function SellerStorePage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
+  const store = useSellerStore((s) => s.store)
+  const fetchStore = useSellerStore((s) => s.fetchStore)
+
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const storeKey = useScopedQueryKey('seller-store')
 
-  const { data: store, isLoading } = useQuery({
-    queryKey: storeKey,
-    queryFn: async () => {
-      try {
-        const res = await sellerGetStore()
-        return res.data.data
-      } catch { return null }
-    },
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchStore()
+  }, [])
 
   useEffect(() => {
     if (store) {
@@ -49,7 +39,7 @@ export default function SellerStorePage() {
       } else {
         await sellerCreateStore({ name, description })
       }
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('seller-store') })
+      await fetchStore()
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Gagal menyimpan toko')
     } finally {

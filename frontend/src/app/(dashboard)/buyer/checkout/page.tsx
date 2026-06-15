@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ShoppingCart, Wallet, AlertCircle } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
@@ -11,17 +10,13 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import EmptyState from '@/components/ui/EmptyState'
 import { SelectionOption, SummaryRow } from '@/components/ui/ListHelpers'
-import { listAddresses } from '@/lib/api/addresses'
 import { checkout } from '@/lib/api/orders'
 import { validate } from '@/lib/api/discounts'
-import { getBalance } from '@/lib/api/wallet'
 import { getApiError } from '@/lib/apiError'
 import { useBuyerCart } from '@/hooks/useBuyerCart'
-import { useAuth } from '@/hooks/useAuth'
-import { refreshBuyerCartCache } from '@/lib/cartCache'
-import { refreshBuyerOrdersCache } from '@/lib/orderCache'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useBuyerStore } from '@/stores/useBuyerStore'
+import { useCartStore } from '@/stores/useCartStore'
 import { formatRupiah } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
 import type { DeliveryMethod } from '@/types'
@@ -34,9 +29,14 @@ const DELIVERY_OPTIONS: { value: DeliveryMethod; label: string; fee: number }[] 
 
 export default function BuyerCheckoutPage() {
   const router = useRouter()
-  const queryClient = useQueryClient()
-  const { isReady: authReady } = useAuth()
   const { lineItems, subtotal, isLoading, isEmpty, isReady, isFetching, clearCartCache } = useBuyerCart()
+
+  const addresses = useBuyerStore((s) => s.addresses)
+  const wallet = useBuyerStore((s) => s.wallet)
+  const fetchAddresses = useBuyerStore((s) => s.fetchAddresses)
+  const fetchWallet = useBuyerStore((s) => s.fetchWallet)
+  const fetchOrders = useBuyerStore((s) => s.fetchOrders)
+  const fetchCart = useCartStore((s) => s.fetchCart)
 
   const [addressId, setAddressId] = useState('')
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('NEXT_DAY')
@@ -48,25 +48,14 @@ export default function BuyerCheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [paid, setPaid] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const addressesKey = useScopedQueryKey('buyer-addresses')
-  const walletKey = useScopedQueryKey('buyer-wallet')
 
-  const { data: addresses } = useQuery({
-    queryKey: addressesKey,
-    queryFn: async () => (await listAddresses()).data.data ?? [],
-    enabled: authReady,
-    ...cachedQueryOptions,
-  })
-
-  const { data: wallet, refetch: refetchWallet } = useQuery({
-    queryKey: walletKey,
-    queryFn: async () => (await getBalance()).data.data,
-    enabled: authReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchAddresses()
+    void fetchWallet()
+  }, [])
 
   useEffect(() => {
-    if (addresses?.length && !addressId) {
+    if (addresses.length && !addressId) {
       const defaultAddr = addresses.find((a) => a.is_default) ?? addresses[0]
       setAddressId(defaultAddr.id)
     }
@@ -182,8 +171,7 @@ export default function BuyerCheckoutPage() {
 
       setPaid(true)
       clearCartCache()
-      await queryClient.invalidateQueries({ queryKey: walletKey })
-      await refreshBuyerOrdersCache(queryClient)
+      await Promise.all([fetchWallet(), fetchOrders(), fetchCart()])
       if (orders.length === 1) {
         router.replace(`/buyer/orders/${orders[0].id}`)
       } else {
@@ -191,8 +179,7 @@ export default function BuyerCheckoutPage() {
       }
     } catch (err: unknown) {
       setError(getApiError(err, 'Checkout gagal'))
-      await refreshBuyerCartCache(queryClient)
-      await refetchWallet()
+      await Promise.all([fetchCart(), fetchWallet()])
     } finally {
       setLoading(false)
     }
@@ -225,7 +212,6 @@ export default function BuyerCheckoutPage() {
     <DashboardLayout title="Checkout" subtitle="Selesaikan pesanan Anda" navItems={BUYER_NAV} role="BUYER">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
-          {/* Cart items preview */}
           <Card>
             <CardHeader><CardTitle>Item Pesanan ({lineItems.length})</CardTitle></CardHeader>
             <div className="flex flex-col gap-2">
@@ -240,7 +226,7 @@ export default function BuyerCheckoutPage() {
 
           <Card>
             <CardHeader><CardTitle>Alamat Pengiriman</CardTitle></CardHeader>
-            {!addresses?.length ? (
+            {!addresses.length ? (
               <p className="text-sm text-slate-500">
                 Belum ada alamat.{' '}
                 <Link href="/buyer/addresses" className="font-medium text-ocean-600 hover:text-ocean-700">Tambah alamat</Link>

@@ -1,48 +1,36 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Store, Package, ShoppingBag } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import StatCard from '@/components/ui/StatCard'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
-import { sellerGetStore } from '@/lib/api/stores'
-import { sellerListProducts } from '@/lib/api/products'
-import { sellerOrders } from '@/lib/api/orders'
-import { useAuth } from '@/hooks/useAuth'
-import { useScopedQueryKey } from '@/lib/queryKeys'
-import { cachedQueryOptions } from '@/lib/queryConfig'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useSellerStore } from '@/stores/useSellerStore'
 import { SELLER_NAV } from '@/lib/nav'
 
 export default function SellerDashboardPage() {
-  const { isReady } = useAuth()
-  const storeKey = useScopedQueryKey('seller-store')
-  const productsCountKey = useScopedQueryKey('seller-products-count')
-  const ordersCountKey = useScopedQueryKey('seller-orders-count')
+  const store = useSellerStore((s) => s.store)
+  const storeLoading = useSellerStore((s) => s.storeLoading)
+  const products = useSellerStore((s) => s.products)
+  const orders = useSellerStore((s) => s.orders)
+  const fetchStore = useSellerStore((s) => s.fetchStore)
+  const fetchProducts = useSellerStore((s) => s.fetchProducts)
+  const fetchOrders = useSellerStore((s) => s.fetchOrders)
 
-  const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: storeKey,
-    queryFn: async () => {
-      try { return (await sellerGetStore()).data.data } catch { return null }
-    },
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
-  const { data: products } = useQuery({
-    queryKey: productsCountKey,
-    queryFn: async () => (await sellerListProducts({ limit: 1 })).data.data,
-    enabled: !!store,
-    ...cachedQueryOptions,
-  })
-  const { data: orders } = useQuery({
-    queryKey: ordersCountKey,
-    queryFn: async () => (await sellerOrders({ limit: 1 })).data.data,
-    enabled: !!store,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchStore()
+  }, [])
 
-  const isLoading = !isReady || storeLoading
+  useFetchOnAuth(() => {
+    if (store) {
+      void fetchProducts({ limit: 1 })
+      void fetchOrders({ limit: 1 })
+    }
+  }, [store?.id])
+
+  const isLoading = storeLoading && !store
 
   return (
     <DashboardLayout title="Dashboard Seller" subtitle="Kelola toko dan pesanan" navItems={SELLER_NAV} role="SELLER">

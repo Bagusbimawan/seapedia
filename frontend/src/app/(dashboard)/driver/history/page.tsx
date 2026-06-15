@@ -1,40 +1,36 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertCircle } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
-import { jobHistory, completeJob } from '@/lib/api/delivery'
+import { completeJob } from '@/lib/api/delivery'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useDriverStore } from '@/stores/useDriverStore'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverHistoryPage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const historyKey = useScopedQueryKey('driver-history')
 
-  const { data, isLoading } = useQuery({
-    queryKey: historyKey,
-    queryFn: async () => (await jobHistory({ limit: 50 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  const history = useDriverStore((s) => s.history)
+  const historyLoading = useDriverStore((s) => s.historyLoading)
+  const fetchHistory = useDriverStore((s) => s.fetchHistory)
+
+  useFetchOnAuth(() => {
+    void fetchHistory({ limit: 50 })
+  }, [])
 
   const handleComplete = async (id: string) => {
     setLoadingId(id)
     setError(null)
     try {
       await completeJob(id)
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('driver-history') })
+      await fetchHistory({ limit: 50 })
     } catch (err: unknown) {
       setError(getApiError(err, 'Gagal menyelesaikan pengiriman. Pastikan pesanan sedang dalam status pengiriman.'))
     } finally { setLoadingId(null) }
@@ -49,13 +45,13 @@ export default function DriverHistoryPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {historyLoading && !history ? (
         <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
-      ) : !data?.items?.length ? (
+      ) : !history?.items?.length ? (
         <Card><p className="text-sm text-slate-500">Belum ada riwayat pekerjaan. Ambil pekerjaan dari halaman Pekerjaan Tersedia.</p></Card>
       ) : (
         <div className="flex flex-col gap-3">
-          {data.items.map((job) => (
+          {history.items.map((job) => (
             <Card key={job.id}>
               <div className="flex items-center justify-between">
                 <div>

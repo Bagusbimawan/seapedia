@@ -1,36 +1,31 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { sellerIncome } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useSellerStore } from '@/stores/useSellerStore'
 import { SELLER_NAV } from '@/lib/nav'
 
 export default function SellerIncomePage() {
-  const { isReady } = useAuth()
-  const incomeKey = useScopedQueryKey('seller-income')
+  const income = useSellerStore((s) => s.income)
+  const incomeLoading = useSellerStore((s) => s.incomeLoading)
+  const fetchIncome = useSellerStore((s) => s.fetchIncome)
 
-  const { data, isLoading } = useQuery({
-    queryKey: incomeKey,
-    queryFn: async () => (await sellerIncome({ limit: 50 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  useFetchOnAuth(() => {
+    void fetchIncome({ limit: 50 })
+  }, [])
 
   return (
     <DashboardLayout title="Pendapatan" subtitle="Riwayat income dan reversal" navItems={SELLER_NAV} role="SELLER">
-      {isLoading ? (
+      {incomeLoading && !income ? (
         <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
-      ) : !data?.items?.length ? (
+      ) : !income?.items?.length ? (
         <Card><p className="text-sm text-slate-500">Belum ada pendapatan.</p></Card>
       ) : (
         <div className="flex flex-col gap-2">
-          {data.items.map((inc) => (
+          {income.items.map((inc) => (
             <Card key={inc.id}>
               <div className="flex items-center justify-between">
                 <div>

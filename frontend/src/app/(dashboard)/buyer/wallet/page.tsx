@@ -1,20 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Wallet } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
-import { getBalance, topup, getTransactions } from '@/lib/api/wallet'
+import { topup } from '@/lib/api/wallet'
 import { getApiError } from '@/lib/apiError'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { useScopedQueryKey } from '@/lib/queryKeys'
-import { syncBuyerWalletCache } from '@/lib/walletCache'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useBuyerStore } from '@/stores/useBuyerStore'
 import { formatRupiah, formatDate } from '@/lib/format'
 import { BUYER_NAV } from '@/lib/nav'
-import type { PaginatedData, WalletTransaction } from '@/types'
 
 const TOPUP_PRESETS = [50000, 100000, 200000, 500000]
 
@@ -25,30 +21,22 @@ const TX_TYPE_LABEL: Record<string, string> = {
 }
 
 export default function BuyerWalletPage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
-  const walletKey = useScopedQueryKey('buyer-wallet')
-  const txsKey = useScopedQueryKey('buyer-wallet-txs')
+  const wallet = useBuyerStore((s) => s.wallet)
+  const walletLoading = useBuyerStore((s) => s.walletLoading)
+  const transactions = useBuyerStore((s) => s.transactions)
+  const fetchWallet = useBuyerStore((s) => s.fetchWallet)
+  const setWallet = useBuyerStore((s) => s.setWallet)
+  const fetchTransactions = useBuyerStore((s) => s.fetchTransactions)
+
   const [amount, setAmount] = useState(100000)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const { data: wallet, isLoading } = useQuery({
-    queryKey: walletKey,
-    queryFn: async () => (await getBalance()).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-    placeholderData: (previous) => previous,
-  })
-
-  const { data: txs } = useQuery({
-    queryKey: txsKey,
-    queryFn: async () => (await getTransactions({ limit: 50 })).data.data as PaginatedData<WalletTransaction> | undefined,
-    enabled: isReady,
-    ...cachedQueryOptions,
-    placeholderData: (previous) => previous,
-  })
+  useFetchOnAuth(() => {
+    void fetchWallet()
+    void fetchTransactions()
+  }, [])
 
   const handleTopup = async () => {
     if (amount < 10000) {
@@ -63,11 +51,8 @@ export default function BuyerWalletPage() {
       const updated = res.data.data
       if (!updated) throw new Error('Respons top up tidak valid')
 
-      syncBuyerWalletCache(queryClient, updated)
-      queryClient.setQueryData(walletKey, updated)
-
-      const txsRes = await getTransactions({ limit: 50 })
-      queryClient.setQueryData(txsKey, txsRes.data.data)
+      setWallet(updated)
+      await fetchTransactions()
 
       setSuccess(`Berhasil top up ${formatRupiah(amount)}! Saldo sekarang ${formatRupiah(updated.balance)}.`)
       setTimeout(() => setSuccess(null), 5000)
@@ -91,7 +76,7 @@ export default function BuyerWalletPage() {
         <Card className="overflow-hidden p-0">
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 px-6 py-8 text-white">
             <p className="text-sm font-medium text-emerald-100">Saldo Saat Ini</p>
-            {isLoading && wallet === undefined ? (
+            {walletLoading && !wallet ? (
               <div className="mt-2 h-10 w-40 animate-pulse rounded-lg bg-white/20" />
             ) : (
               <p className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -138,17 +123,17 @@ export default function BuyerWalletPage() {
           <CardHeader>
             <CardTitle>
               Riwayat Transaksi
-              {txs?.items?.length ? (
-                <span className="ml-2 text-sm font-normal text-slate-400">({txs.items.length})</span>
+              {transactions?.items?.length ? (
+                <span className="ml-2 text-sm font-normal text-slate-400">({transactions.items.length})</span>
               ) : null}
             </CardTitle>
           </CardHeader>
 
-          {!txs?.items?.length ? (
+          {!transactions?.items?.length ? (
             <p className="text-sm text-slate-500">Belum ada transaksi.</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {txs.items.map((tx) => (
+              {transactions.items.map((tx) => (
                 <div
                   key={tx.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-4 py-3"

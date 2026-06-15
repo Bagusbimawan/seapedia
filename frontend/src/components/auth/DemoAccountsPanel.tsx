@@ -1,10 +1,9 @@
 'use client'
 
 import { Copy, Check } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getDemoSellers } from '@/lib/api/demo'
+import { useMemo, useState, useEffect } from 'react'
 import { DEMO_ACCOUNTS, DEMO_VOUCHER } from '@/lib/demoAccounts'
+import { usePublicStore } from '@/stores/usePublicStore'
 
 interface DemoRow {
   role: string
@@ -20,13 +19,12 @@ interface DemoAccountsPanelProps {
 
 export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) {
   const [copied, setCopied] = useState<string | null>(null)
+  const demoSellers = usePublicStore((s) => s.demoSellers)
+  const fetchDemoSellers = usePublicStore((s) => s.fetchDemoSellers)
 
-  const { data: sellersRes } = useQuery({
-    queryKey: ['demo-sellers'],
-    queryFn: async () => (await getDemoSellers()).data.data ?? [],
-    staleTime: 10_000,
-    refetchOnWindowFocus: true,
-  })
+  useEffect(() => {
+    void fetchDemoSellers()
+  }, [fetchDemoSellers])
 
   const rows = useMemo<DemoRow[]>(() => {
     const result: DemoRow[] = DEMO_ACCOUNTS.map((acc) => ({
@@ -37,7 +35,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
       canLogin: true,
     }))
 
-    for (const seller of sellersRes ?? []) {
+    for (const seller of demoSellers) {
       result.push({
         role: 'Seller',
         email: seller.email,
@@ -48,7 +46,7 @@ export default function DemoAccountsPanel({ onSelect }: DemoAccountsPanelProps) 
     }
 
     return result
-  }, [sellersRes])
+  }, [demoSellers])
 
   const handleCopy = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text)

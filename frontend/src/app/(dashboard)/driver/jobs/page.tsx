@@ -1,40 +1,36 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Truck, Info, AlertCircle, RefreshCw } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
-import { listAvailableJobs, takeJob } from '@/lib/api/delivery'
+import { takeJob } from '@/lib/api/delivery'
 import { getApiError } from '@/lib/apiError'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { useAuth } from '@/hooks/useAuth'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { getScopedQueryKey, useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useDriverStore } from '@/stores/useDriverStore'
 import { DRIVER_NAV } from '@/lib/nav'
 
 export default function DriverJobsPage() {
-  const queryClient = useQueryClient()
-  const { isReady } = useAuth()
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const availableJobsKey = useScopedQueryKey('driver-available-jobs')
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: availableJobsKey,
-    queryFn: async () => (await listAvailableJobs({ limit: 20 })).data.data,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  const jobs = useDriverStore((s) => s.jobs)
+  const jobsLoading = useDriverStore((s) => s.jobsLoading)
+  const fetchJobs = useDriverStore((s) => s.fetchJobs)
+
+  useFetchOnAuth(() => {
+    void fetchJobs({ limit: 20 })
+  }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await refetch()
+      await fetchJobs({ limit: 20 })
     } finally {
       setRefreshing(false)
     }
@@ -45,8 +41,7 @@ export default function DriverJobsPage() {
     setError(null)
     try {
       await takeJob(id)
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('driver-available-jobs') })
-      await queryClient.invalidateQueries({ queryKey: getScopedQueryKey('driver-history') })
+      await fetchJobs({ limit: 20 })
     } catch (err: unknown) {
       setError(getApiError(err, 'Gagal mengambil pekerjaan. Pastikan seller sudah menandai pesanan sebagai Siap Kirim.'))
     } finally { setLoadingId(null) }
@@ -78,9 +73,9 @@ export default function DriverJobsPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {jobsLoading && !jobs ? (
         <LoadingSkeleton rows={3} />
-      ) : !data?.items?.length ? (
+      ) : !jobs?.items?.length ? (
         <EmptyState
           icon={Truck}
           title="Belum ada pekerjaan tersedia"
@@ -89,7 +84,7 @@ export default function DriverJobsPage() {
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {data.items.map((job) => (
+          {jobs.items.map((job) => (
             <Card key={job.id} className="transition-all hover:shadow-card">
               <div className="flex items-center justify-between">
                 <div>

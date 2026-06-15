@@ -2,45 +2,41 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
 import { Package, RefreshCw } from 'lucide-react'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import { OrderListItem, LoadingSkeleton } from '@/components/ui/ListHelpers'
 import { OrderStatusBadge } from '@/components/ui/Badge'
-import { buyerOrders } from '@/lib/api/orders'
 import { formatRupiah, formatDate } from '@/lib/format'
-import { cachedQueryOptions } from '@/lib/queryConfig'
-import { shouldShowQuerySkeleton } from '@/lib/queryLoading'
-import { useAuth } from '@/hooks/useAuth'
-import { useScopedQueryKey } from '@/lib/queryKeys'
+import { useFetchOnAuth } from '@/hooks/useFetchOnAuth'
+import { useBuyerStore } from '@/stores/useBuyerStore'
 import { BUYER_NAV } from '@/lib/nav'
-import type { OrderStatus, PaginatedData, Order } from '@/types'
+import type { OrderStatus } from '@/types'
 
 export default function BuyerOrdersPage() {
-  const { isReady } = useAuth()
   const [page, setPage] = useState(1)
   const [refreshing, setRefreshing] = useState(false)
-  const ordersKey = useScopedQueryKey('buyer-orders', page)
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ordersKey,
-    queryFn: async () => (await buyerOrders({ page, limit: 10 })).data.data as PaginatedData<Order> | undefined,
-    enabled: isReady,
-    ...cachedQueryOptions,
-  })
+  const orders = useBuyerStore((s) => s.orders)
+  const ordersLoading = useBuyerStore((s) => s.ordersLoading)
+  const ordersError = useBuyerStore((s) => s.ordersError)
+  const fetchOrders = useBuyerStore((s) => s.fetchOrders)
+
+  useFetchOnAuth(() => {
+    void fetchOrders({ page, limit: 10 })
+  }, [page])
 
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await refetch()
+      await fetchOrders({ page, limit: 10 })
     } finally {
       setRefreshing(false)
     }
   }
 
-  const showSkeleton = shouldShowQuerySkeleton(isReady, { isLoading, isError, data })
+  const showSkeleton = ordersLoading && !orders
 
   return (
     <DashboardLayout title="Riwayat Pembelian" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">
@@ -53,14 +49,14 @@ export default function BuyerOrdersPage() {
 
       {showSkeleton ? (
         <LoadingSkeleton rows={4} />
-      ) : isError ? (
+      ) : ordersError ? (
         <EmptyState
           icon={Package}
           title="Gagal memuat riwayat"
           description="Silakan coba refresh atau login ulang."
-          action={<Button variant="primary" onClick={() => refetch()}>Coba Lagi</Button>}
+          action={<Button variant="primary" onClick={handleRefresh}>Coba Lagi</Button>}
         />
-      ) : !data?.items?.length ? (
+      ) : !orders?.items?.length ? (
         <EmptyState
           icon={Package}
           title="Belum ada pesanan"
@@ -70,7 +66,7 @@ export default function BuyerOrdersPage() {
       ) : (
         <>
           <div className="flex flex-col gap-3">
-            {data.items.map((order) => (
+            {orders.items.map((order) => (
               <OrderListItem
                 key={order.id}
                 id={order.id}
@@ -85,11 +81,11 @@ export default function BuyerOrdersPage() {
               />
             ))}
           </div>
-          {data.total > 10 && (
+          {orders.total > 10 && (
             <div className="mt-6 flex items-center justify-center gap-3">
               <Button size="sm" variant="secondary" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Sebelumnya</Button>
               <span className="text-sm text-slate-500">Halaman {page}</span>
-              <Button size="sm" variant="secondary" disabled={page * 10 >= data.total} onClick={() => setPage((p) => p + 1)}>Selanjutnya</Button>
+              <Button size="sm" variant="secondary" disabled={page * 10 >= orders.total} onClick={() => setPage((p) => p + 1)}>Selanjutnya</Button>
             </div>
           )}
         </>

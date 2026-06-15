@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { Star } from 'lucide-react'
 import PageHeader from '@/components/ui/PageHeader'
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card'
@@ -9,21 +8,24 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import EmptyState from '@/components/ui/EmptyState'
 import { LoadingSkeleton } from '@/components/ui/ListHelpers'
-import { listReviews, createReview } from '@/lib/api/reviews'
+import { createReview } from '@/lib/api/reviews'
 import { formatDate } from '@/lib/format'
+import { usePublicStore } from '@/stores/usePublicStore'
 
 export default function ReviewsPage() {
-  const queryClient = useQueryClient()
+  const reviews = usePublicStore((s) => s.reviews)
+  const reviewsLoading = usePublicStore((s) => s.reviewsLoading)
+  const fetchReviews = usePublicStore((s) => s.fetchReviews)
+
   const [name, setName] = useState('')
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['reviews'],
-    queryFn: async () => (await listReviews({ limit: 20 })).data.data,
-  })
+  useEffect(() => {
+    void fetchReviews()
+  }, [fetchReviews])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,7 +36,7 @@ export default function ReviewsPage() {
       setName('')
       setComment('')
       setRating(5)
-      await queryClient.invalidateQueries({ queryKey: ['reviews'] })
+      await fetchReviews()
     } catch (err: unknown) {
       setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Gagal mengirim review')
     } finally { setLoading(false) }
@@ -78,12 +80,12 @@ export default function ReviewsPage() {
         </Card>
 
         <div className="flex flex-col gap-3">
-          {isLoading ? (
+          {reviewsLoading && !reviews ? (
             <LoadingSkeleton rows={3} />
-          ) : !data?.items?.length ? (
+          ) : !reviews?.items?.length ? (
             <EmptyState icon={Star} title="Belum ada ulasan" description="Jadilah yang pertama memberikan ulasan!" />
           ) : (
-            data.items.map((r) => (
+            reviews.items.map((r) => (
               <Card key={r.id} className="transition-all hover:shadow-card">
                 <div className="mb-2 flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-ocean-100 text-sm font-bold text-ocean-700">
