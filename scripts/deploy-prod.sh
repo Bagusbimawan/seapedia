@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# SEAPEDIA — production deploy (jalankan di EC2 setelah git pull)
+# SEAPEDIA — production deploy (Amazon Linux / Ubuntu EC2)
 # Usage: bash scripts/deploy-prod.sh
 #
 # Prasyarat (sekali):
-#   bash scripts/setup-prod-env.sh   # tulis backend/.env
-#   sudo bash scripts/setup-nginx.sh # nginx + systemd
+#   bash scripts/setup-prod-env.sh        # tulis backend/.env
+#   sudo bash scripts/setup-nginx.sh      # nginx + systemd
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-APP_DIR="$ROOT"
+# shellcheck source=scripts/lib/os-detect.sh
+source "$ROOT/scripts/lib/os-detect.sh"
 
-echo "==> SEAPEDIA production deploy"
+APP_DIR="$ROOT"
+OS_FAMILY="$(detect_os_family)"
+
+echo "==> SEAPEDIA production deploy ($OS_FAMILY)"
 echo "    Repo: $ROOT"
 
 if [[ ! -f backend/.env ]]; then
@@ -20,7 +24,7 @@ if [[ ! -f backend/.env ]]; then
   exit 1
 fi
 
-if [[ ! -f /etc/nginx/sites-enabled/seapedia-fe ]]; then
+if [[ ! -f /etc/nginx/conf.d/seapedia-fe.conf && ! -f /etc/nginx/sites-enabled/seapedia-fe ]]; then
   echo "WARNING: nginx belum disetup untuk seapedia.fe"
   echo "Jalankan sekali: sudo bash scripts/setup-nginx.sh"
 fi
@@ -34,7 +38,7 @@ fi
 
 echo "==> Backend: build"
 cd "$ROOT/backend"
-export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"
+export PATH="$PATH:/usr/local/go/bin:/usr/bin:$HOME/go/bin"
 go mod download
 CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bin/seapedia ./cmd/api/main.go
 
