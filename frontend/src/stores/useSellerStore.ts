@@ -43,7 +43,7 @@ const emptySeller = {
   incomeLoading: false,
 }
 
-export const useSellerStore = create<SellerState>((set) => ({
+export const useSellerStore = create<SellerState>((set, get) => ({
   ...emptySeller,
 
   fetchStore: async () => {
@@ -72,7 +72,8 @@ export const useSellerStore = create<SellerState>((set) => ({
       const res = await sellerOrders(params)
       set({ orders: res.data.data ?? null, ordersLoading: false })
     } catch {
-      set({ orders: null, ordersLoading: false })
+      const existing = get().orders
+      set({ ordersLoading: false, orders: existing })
     }
   },
 

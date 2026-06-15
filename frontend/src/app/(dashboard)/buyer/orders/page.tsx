@@ -36,7 +36,7 @@ export default function BuyerOrdersPage() {
     }
   }
 
-  const showSkeleton = ordersLoading && !orders
+  const showSkeleton = ordersLoading && !orders?.items?.length
 
   return (
     <DashboardLayout title="Riwayat Pembelian" subtitle="Lacak semua pesanan Anda" navItems={BUYER_NAV} role="BUYER">

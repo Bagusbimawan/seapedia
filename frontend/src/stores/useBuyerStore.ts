@@ -52,7 +52,7 @@ const emptyBuyer = {
   addressesError: false,
 }
 
-export const useBuyerStore = create<BuyerState>((set) => ({
+export const useBuyerStore = create<BuyerState>((set, get) => ({
   ...emptyBuyer,
 
   fetchWallet: async () => {
@@ -61,7 +61,8 @@ export const useBuyerStore = create<BuyerState>((set) => ({
       const res = await getBalance()
       set({ wallet: res.data.data ?? null, walletLoading: false })
     } catch {
-      set({ wallet: null, walletLoading: false, walletError: true })
+      const existing = get().wallet
+      set({ walletLoading: false, walletError: !existing })
     }
   },
 
@@ -83,7 +84,11 @@ export const useBuyerStore = create<BuyerState>((set) => ({
       const res = await buyerOrders(params)
       set({ orders: res.data.data ?? null, ordersLoading: false })
     } catch {
-      set({ orders: null, ordersLoading: false, ordersError: true })
+      const existing = get().orders
+      set({
+        ordersLoading: false,
+        ordersError: !existing?.items?.length,
+      })
     }
   },
 
@@ -103,7 +108,11 @@ export const useBuyerStore = create<BuyerState>((set) => ({
       const res = await listAddresses()
       set({ addresses: res.data.data ?? [], addressesLoading: false })
     } catch {
-      set({ addresses: [], addressesLoading: false, addressesError: true })
+      const existing = get().addresses
+      set({
+        addressesLoading: false,
+        addressesError: existing.length === 0,
+      })
     }
   },
 

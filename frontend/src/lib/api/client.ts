@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import Cookies from 'js-cookie'
 import { clearSession, logoutAndRedirect } from '@/lib/authSession'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -13,8 +14,9 @@ const client = axios.create({
 // Request interceptor: inject Bearer token from zustand store
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Try zustand store first (works client-side)
-    const token = useAuthStore.getState().token
+    const token =
+      useAuthStore.getState().token ||
+      (typeof window !== 'undefined' ? Cookies.get('seapedia-token') : undefined)
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

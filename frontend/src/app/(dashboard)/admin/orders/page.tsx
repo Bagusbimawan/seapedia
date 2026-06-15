@@ -20,7 +20,7 @@ export default function AdminOrdersPage() {
 
   return (
     <DashboardLayout title="Pesanan" navItems={ADMIN_NAV} role="ADMIN">
-      {ordersLoading && !orders ? (
+      {ordersLoading && !orders?.items?.length ? (
         <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
       ) : !orders?.items?.length ? (
         <Card><p className="text-sm text-slate-500">Belum ada pesanan.</p></Card>

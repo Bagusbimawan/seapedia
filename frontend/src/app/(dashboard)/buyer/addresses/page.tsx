@@ -82,7 +82,7 @@ export default function BuyerAddressesPage() {
         <Button onClick={openCreate}>Tambah Alamat</Button>
       </div>
 
-      {addressesLoading && !addresses.length ? (
+      {addressesLoading && addresses.length === 0 ? (
         <LoadingSkeleton rows={2} />
       ) : !addresses.length ? (
         <EmptyState

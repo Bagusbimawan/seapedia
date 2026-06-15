@@ -23,6 +23,8 @@ export default function AdminDashboardPage() {
     void fetchOrders({ limit: 1 })
   }, [])
 
+  // Prefetch ringan untuk stat — halaman detail punya fetch sendiri
+
   return (
     <DashboardLayout title="Dashboard Admin" subtitle="Monitoring platform" navItems={ADMIN_NAV} role="ADMIN">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

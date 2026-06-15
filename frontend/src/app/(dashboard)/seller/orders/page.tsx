@@ -57,7 +57,7 @@ export default function SellerOrdersPage() {
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
       )}
-      {ordersLoading && !orders ? (
+      {ordersLoading && !orders?.items?.length ? (
         <LoadingSkeleton rows={4} />
       ) : !orders?.items?.length ? (
         <EmptyState icon={Package} title="Belum ada pesanan" description="Pesanan dari pembeli akan muncul di sini" />

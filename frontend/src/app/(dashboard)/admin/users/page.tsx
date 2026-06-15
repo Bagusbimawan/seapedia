@@ -18,8 +18,10 @@ export default function AdminUsersPage() {
 
   return (
     <DashboardLayout title="Pengguna" subtitle="Semua pengguna terdaftar di platform" navItems={ADMIN_NAV} role="ADMIN">
-      {usersLoading && !users ? (
+      {usersLoading ? (
         <LoadingSkeleton rows={4} />
+      ) : !users?.items?.length ? (
+        <p className="text-sm text-slate-500">Belum ada pengguna.</p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
           <table className="w-full text-sm">

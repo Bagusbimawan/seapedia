@@ -171,7 +171,12 @@ export default function BuyerCheckoutPage() {
 
       setPaid(true)
       clearCartCache()
-      await Promise.all([fetchWallet(), fetchOrders(), fetchCart()])
+      await Promise.all([
+        fetchWallet(),
+        fetchOrders({ limit: 20 }),
+        fetchCart(),
+        fetchAddresses(),
+      ])
       if (orders.length === 1) {
         router.replace(`/buyer/orders/${orders[0].id}`)
       } else {

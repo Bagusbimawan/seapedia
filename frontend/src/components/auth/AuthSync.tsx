@@ -14,9 +14,17 @@ import {
 import { switchRole as switchRoleApi } from '@/lib/api/auth'
 import type { Role } from '@/types'
 
-/** Keeps zustand auth + React Query aligned with cookies (middleware source of truth). */
+/** Keeps zustand auth aligned with cookies (middleware source of truth). */
 export default function AuthSync() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated)
+
+  // Pastikan hasHydrated true setelah persist selesai (jangan blokir fetch selamanya)
+  useEffect(() => {
+    const finish = () => useAuthStore.getState().setHasHydrated()
+    const unsub = useAuthStore.persist.onFinishHydration(finish)
+    if (useAuthStore.persist.hasHydrated()) finish()
+    return unsub
+  }, [])
 
   useEffect(() => {
     if (!hasHydrated) return
@@ -44,7 +52,14 @@ export default function AuthSync() {
               : me.roles.length === 1
                 ? (me.roles[0] as Role)
                 : 'PENDING'
-          establishSession(cookieToken, me, role, { forceClear: true })
+          const tokenChanged = cookieToken !== token
+          const userChanged =
+            storeUserId !== 'anon' &&
+            cookieUserId !== 'anon' &&
+            storeUserId !== cookieUserId
+          establishSession(cookieToken, me, role, {
+            forceClear: tokenChanged || userChanged,
+          })
         } catch {
           clearSession({ redirect: false })
         }

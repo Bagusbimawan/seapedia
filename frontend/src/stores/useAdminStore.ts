@@ -42,7 +42,7 @@ const emptyAdmin = {
   promosLoading: false,
 }
 
-export const useAdminStore = create<AdminState>((set) => ({
+export const useAdminStore = create<AdminState>((set, get) => ({
   ...emptyAdmin,
 
   fetchUsers: async (params) => {
@@ -51,7 +51,7 @@ export const useAdminStore = create<AdminState>((set) => ({
       const res = await listUsers(params)
       set({ users: res.data.data ?? null, usersLoading: false })
     } catch {
-      set({ users: null, usersLoading: false })
+      set({ usersLoading: false, users: get().users })
     }
   },
 
@@ -71,7 +71,7 @@ export const useAdminStore = create<AdminState>((set) => ({
       const res = await listOrders(params)
       set({ orders: res.data.data ?? null, ordersLoading: false })
     } catch {
-      set({ orders: null, ordersLoading: false })
+      set({ ordersLoading: false, orders: get().orders })
     }
   },
 

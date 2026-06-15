@@ -1,18 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { getUserIdFromToken } from '@/lib/authSession'
+import { useAuthReady } from '@/hooks/useAuthReady'
 
-/** Panggil fetch store saat user sudah login + zustand hydrated. Re-run saat userId berubah (login/logout). */
+/** Panggil fetch store saat JWT tersedia. Re-run saat user/token berubah. */
 export function useFetchOnAuth(fetcher: () => void | Promise<void>, deps: unknown[] = []) {
-  const token = useAuthStore((s) => s.token)
-  const authReady = useAuthStore((s) => s.hasHydrated && !!s.token)
-  const userId = useAuthStore((s) => s.user?.id) ?? getUserIdFromToken(token)
+  const { ready, token, userId } = useAuthReady()
 
   useEffect(() => {
-    if (!authReady || !userId || userId === 'anon') return
+    if (!ready) return
     void fetcher()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authReady, userId, ...deps])
+  }, [ready, token, userId, ...deps])
 }
