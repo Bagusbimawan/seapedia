@@ -164,6 +164,18 @@ else
   log_skip "POST /auth/switch-role (no multi@ account)"
 fi
 
+# Pakai produk dari toko seller@ agar flow seller/driver konsisten
+api GET /seller/store "" "$SELLER_TOKEN"
+SELLER_STORE_ID=$(echo "$BODY" | jq -r '.data.id // empty')
+api GET /products
+PRODUCT_ID=$(echo "$BODY" | jq -r --arg sid "$SELLER_STORE_ID" '.data.items[]? | select(.store_id==$sid) | .id' | head -1)
+if [[ -z "$PRODUCT_ID" || "$PRODUCT_ID" == "null" ]]; then
+  PRODUCT_ID=$(echo "$BODY" | jq -r '.data.items[0].id // empty')
+  log_skip "gunakan produk pertama (bukan dari toko seller@)"
+else
+  log_pass "Produk checkout dari toko seller@: $PRODUCT_ID"
+fi
+
 # ── Buyer: Wallet ────────────────────────────────────────────────────────────
 log_section "Buyer — Wallet"
 api GET /buyer/wallet "" "$BUYER_TOKEN"

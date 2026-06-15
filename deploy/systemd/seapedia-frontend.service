@@ -1,0 +1,16 @@
+[Unit]
+Description=SEAPEDIA Frontend (Next.js)
+After=network.target seapedia-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/seapedia/frontend
+Environment=NODE_ENV=production
+Environment=PORT=3000
+ExecStart=/usr/local/bin/bun run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=SEAPEDIA Backend API
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/seapedia/backend
+EnvironmentFile=/opt/seapedia/backend/.env
+ExecStart=/opt/seapedia/backend/bin/seapedia
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
